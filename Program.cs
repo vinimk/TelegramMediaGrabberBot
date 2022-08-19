@@ -10,12 +10,21 @@ IHost host = Host.CreateDefaultBuilder(args)
         .GetSection("Telegram.Bot.Config")
         .Get<TelegramBotConfig>();
 
-        TweetinviConfig tweetinviConfig = configuration
-        .GetSection("Tweetinvi.Config")
-        .Get<TweetinviConfig>();
+        var whiteListedGroups = hostContext.Configuration.GetSection("WhitelistedGroupIds").Get<List<long?>>();
 
-        services.AddSingleton(telegramBotConfig);
-        services.AddSingleton(tweetinviConfig);
+        var nitterInstances = hostContext.Configuration.GetSection("NitterInstances").Get<List<string?>>();
+
+        var supportedWebSites = hostContext.Configuration.GetSection("SupportedWebSites").Get<List<string>>();
+
+        AppSettings appSettings = new()
+        {
+            TelegramBotConfig = telegramBotConfig,
+            WhitelistedGroups = whiteListedGroups,
+            NitterInstances = nitterInstances,
+            SupportedWebSites = supportedWebSites
+        }; ;
+        services.AddSingleton<AppSettings>(appSettings);
+
         services.AddHostedService<Worker>();
     })
     .Build();

@@ -2,6 +2,6 @@
 {
     public class TelegramBotConfig
     {
-        public string? BotToken { get; set; }  
+        public string? BotToken { get; set; }
     }
 }

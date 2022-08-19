@@ -1,6 +1,6 @@
-using CliWrap;
-using CliWrap.Buffered;
 using Telegram.Bot;
+using Telegram.Bot.Polling;
+using Telegram.Bot.Types.Enums;
 using TelegramMediaGrabberBot.Config;
 
 namespace TelegramMediaGrabberBot
@@ -11,37 +11,45 @@ namespace TelegramMediaGrabberBot
         private readonly TelegramBotClient _telegramClient;
 
 
-        public Worker(ILogger<Worker> logger, TelegramBotConfig telegramBotConfig, TweetinviConfig tweetinviConfig)
+        public Worker(ILogger<Worker> logger, AppSettings appSettings)
         {
-            ArgumentNullException.ThrowIfNull(telegramBotConfig);
-            ArgumentNullException.ThrowIfNull(telegramBotConfig.BotToken);
-
-            ArgumentNullException.ThrowIfNull(tweetinviConfig);
-            ArgumentNullException.ThrowIfNull(tweetinviConfig.AcessToken);
-            ArgumentNullException.ThrowIfNull(tweetinviConfig.AcessTokenSecret);
-            ArgumentNullException.ThrowIfNull(tweetinviConfig.ConsumerKey);
-            ArgumentNullException.ThrowIfNull(tweetinviConfig.ConsumerSecret);
+            ArgumentNullException.ThrowIfNull(appSettings);
+            ArgumentNullException.ThrowIfNull(appSettings.TelegramBotConfig);
+            ArgumentNullException.ThrowIfNull(appSettings.TelegramBotConfig.BotToken);
+            ArgumentNullException.ThrowIfNull(appSettings.WhitelistedGroups);
+            ArgumentNullException.ThrowIfNull(appSettings.NitterInstances);
+            ArgumentNullException.ThrowIfNull(appSettings.SupportedWebSites);
 
             _logger = logger;
-            _telegramClient = new TelegramBotClient(telegramBotConfig.BotToken);
-            
+            _telegramClient = new TelegramBotClient(appSettings.TelegramBotConfig.BotToken);
+
+            TelegramUpdateHandlers.WhitelistedGroups.AddRange(appSettings.WhitelistedGroups);
+
+            TwitterImageScrapper.NitterInstances.AddRange(appSettings.NitterInstances);
+
+            TelegramUpdateHandlers.SupportedWebSites.AddRange(appSettings.SupportedWebSites);
+
+
+            using var cts = new CancellationTokenSource();
+            // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool.
+            var receiverOptions = new ReceiverOptions()
+            {
+                AllowedUpdates = Array.Empty<UpdateType>(),
+                ThrowPendingUpdates = true,
+            };
+
+            _telegramClient.StartReceiving(updateHandler: TelegramUpdateHandlers.HandleUpdateAsync,
+                               pollingErrorHandler: TelegramUpdateHandlers.PollingErrorHandler,
+                               receiverOptions: receiverOptions,
+                               cancellationToken: cts.Token);
+
         }
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-
-            var url = "https://www.youtube.com/watch?v=IGQBtbKSVhY";
-            var result = await Cli.Wrap("yt-dlp")
-                .WithArguments(new[] {"-o", "tmp/test.%(ext)s", url })
-                //.WithWorkingDirectory("/usr/local/bin")
-                .WithValidation(CommandResultValidation.None)
-                .ExecuteBufferedAsync(cancellationToken: cancellationToken);
-
-
             while (!cancellationToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-                await Task.Delay(1000, cancellationToken);
+                await Task.Delay(3000, cancellationToken);
             }
         }
     }

@@ -9,14 +9,15 @@
 		<DockerfileContext>.</DockerfileContext>
 		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
 		<LangVersion>preview</LangVersion>
+		<NeutralLanguage>en-US</NeutralLanguage>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="CliWrap" Version="3.4.4" />
+		<PackageReference Include="HtmlAgilityPack" Version="1.11.43" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
 		<PackageReference Include="Telegram.Bot" Version="18.0.0" />
-		<PackageReference Include="TweetinviAPI" Version="5.0.4" />
 	</ItemGroup>
 
 	<ItemGroup>

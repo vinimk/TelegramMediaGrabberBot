@@ -59,5 +59,14 @@ namespace TelegramMediaGrabberBot.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This group is not whitelisted, remove the bot from the group or get access.
+        /// </summary>
+        internal static string GroupNotAllowed {
+            get {
+                return ResourceManager.GetString("GroupNotAllowed", resourceCulture);
+            }
+        }
     }
 }
