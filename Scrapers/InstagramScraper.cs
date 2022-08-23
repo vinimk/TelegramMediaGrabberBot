@@ -22,17 +22,19 @@ namespace TelegramMediaGrabberBot.Scrapers
             if (response.IsSuccessStatusCode)
             {
                 var stringResponse = await response.Content.ReadAsStringAsync();
+                log.LogInformation(stringResponse);
                 dynamic result = JObject.Parse(stringResponse);
                 if (result != null)
                 {
                     var item = result.graphql.shortcode_media;
                     string mediaType = item.__typename;
 
-                    ScrapedData scraped = new();
-
-                    scraped.Author = $"{item.owner.full_name} (@{item.owner.username})";
-                    scraped.Url = instagramUrl.ToString();
-                    scraped.Content = item.edge_media_to_caption.edges[0].node.text;
+                    ScrapedData scraped = new()
+                    {
+                        Author = $"{item.owner.full_name} (@{item.owner.username})",
+                        Url = instagramUrl.ToString(),
+                        Content = item.edge_media_to_caption.edges[0].node.text
+                    };
 
                     switch (mediaType)
                     {
