@@ -1,6 +1,6 @@
 ﻿namespace TelegramMediaGrabberBot.DataStructures
 {
-    public enum TweetType
+    public enum ScrapedDataType
     {
         Photo,
         Video,

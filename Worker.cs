@@ -2,6 +2,7 @@ using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
 using TelegramMediaGrabberBot.Config;
+using TelegramMediaGrabberBot.Scrapers;
 
 namespace TelegramMediaGrabberBot
 {
@@ -28,7 +29,7 @@ namespace TelegramMediaGrabberBot
 
             TelegramUpdateHandlers.WhitelistedGroups.AddRange(appSettings.WhitelistedGroups);
 
-            TwitterImageScrapper.NitterInstances.AddRange(appSettings.NitterInstances);
+            TwitterScraper.NitterInstances.AddRange(appSettings.NitterInstances);
 
             TelegramUpdateHandlers.SupportedWebSites.AddRange(appSettings.SupportedWebSites);
 

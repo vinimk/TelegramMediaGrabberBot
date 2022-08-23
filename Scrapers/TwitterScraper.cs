@@ -2,16 +2,16 @@
 using System.Web;
 using TelegramMediaGrabberBot.DataStructures;
 
-namespace TelegramMediaGrabberBot
+namespace TelegramMediaGrabberBot.Scrapers
 {
-    public static class TwitterImageScrapper
+    public static class TwitterScraper
     {
-        private static readonly ILogger log = ApplicationLogging.CreateLogger("TwitterImageScrapper");
+        private static readonly ILogger log = ApplicationLogging.CreateLogger("TwitterScraper");
         public static readonly List<string?> NitterInstances;
-        static TwitterImageScrapper() => NitterInstances = new();
+        static TwitterScraper() => NitterInstances = new();
 
 
-        public static async Task<Tweet?> ExtractTweetContent(Uri twitterUrl)
+        public static async Task<ScrapedData?> ExtractContent(Uri twitterUrl)
         {
             if (NitterInstances != null)
             {
@@ -35,7 +35,7 @@ namespace TelegramMediaGrabberBot
                         var metaNodes = doc.DocumentNode.SelectSingleNode("//head").Descendants("meta");
 
 
-                        Tweet tweet = new()
+                        ScrapedData scraped = new()
                         {
                             Url = twitterUrl.AbsoluteUri
                         };
@@ -45,29 +45,30 @@ namespace TelegramMediaGrabberBot
                             .First()
                             .GetAttributeValue("content", ""));
 
-                        tweet.Content = tweetContet;
+                        scraped.Content = tweetContet;
 
                         string tweetAuthor = HttpUtility.HtmlDecode(metaNodes.
                             Where(x => x.GetAttributeValue("property", null) == "og:title")
                             .First()
                             .GetAttributeValue("content", ""));
 
-                        tweet.Author = tweetAuthor;
+                        scraped.Author = tweetAuthor;
 
                         string tweetType = HttpUtility.HtmlDecode(metaNodes.
                             Where(x => x.GetAttributeValue("property", null) == "og:type")
                             .First()
                             .GetAttributeValue("content", ""));
 
-                        tweet.SetType(tweetType);
-                        switch (tweet.Type)
+                        switch (tweetType)
                         {
-                            case TweetType.Video:
+                            case "video":
+                                scraped.Type = DataStructures.ScrapedDataType.Video;
                                 var videoStream = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri);
-                                tweet.VideoStream = videoStream;
-                                return tweet;
+                                scraped.VideoStream = videoStream;
+                                break;
 
-                            case TweetType.Photo:
+                            case "photo":
+                                scraped.Type = DataStructures.ScrapedDataType.Photo;
                                 var imageStrings = metaNodes
                                  .Where(x => x.GetAttributeValue("property", null) == "og:image" &&
                                  !x.GetAttributeValue("content", null).Contains("tw_video_thumb"))
@@ -77,15 +78,16 @@ namespace TelegramMediaGrabberBot
 
                                 if (imageStrings.Count > 0)
                                 {
-                                    tweet.ImagesUrl = imageStrings;
-                                    return tweet;
+                                    scraped.ImagesUrl = imageStrings;
                                 }
                                 break;
-
-                            case TweetType.Article:
+                            case "article":
+                                scraped.Type = DataStructures.ScrapedDataType.Article;
+                                break;
                             default:
-                                return tweet;
+                                break;
                         }
+                        return scraped;
                     }
                     catch { }//empty catch, if there is any issue with one nitter instance, it will go to the next one
                 }

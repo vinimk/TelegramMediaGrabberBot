@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
@@ -14,7 +14,9 @@
 
 	<ItemGroup>
 		<PackageReference Include="CliWrap" Version="3.4.4" />
-		<PackageReference Include="HtmlAgilityPack" Version="1.11.43" />
+		<PackageReference Include="GraphQL.Client" Version="5.1.0" />
+		<PackageReference Include="GraphQL.Client.Serializer.SystemTextJson" Version="5.1.0" />
+		<PackageReference Include="HtmlAgilityPack" Version="1.11.45" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
 		<PackageReference Include="Telegram.Bot" Version="18.0.0" />

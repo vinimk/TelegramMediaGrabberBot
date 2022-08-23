@@ -5,12 +5,13 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InputFiles;
 using TelegramMediaGrabberBot.DataStructures;
+using TelegramMediaGrabberBot.Scrapers;
 
 namespace TelegramMediaGrabberBot
 {
     public static class TelegramUpdateHandlers
     {
-        private static readonly ILogger log = ApplicationLogging.CreateLogger("TwitterImageScrapper");
+        private static readonly ILogger log = ApplicationLogging.CreateLogger("TelegramUpdateHandlers");
 
         public static readonly List<long?> WhitelistedGroups;
         public static readonly List<string> SupportedWebSites;
@@ -75,51 +76,55 @@ namespace TelegramMediaGrabberBot
                         log.LogInformation($"Ignoring message {message.Text} because of no valid url");
                         return;
                     }
-                    #region twitter.com
+
+                    ScrapedData? data = null;
                     if (uri.Host.Contains("twitter.com"))
                     {
-                        var tweet = await TwitterImageScrapper.ExtractTweetContent(uri);
-                        if (tweet != null)
-                        {
-                            switch (tweet.Type)
-                            {
-                                case TweetType.Photo:
-                                    if (tweet.ImagesUrl != null &&
-                                        tweet.ImagesUrl.Any())
-                                    {
-                                        var albumMedia = new List<IAlbumInputMedia>();
-                                        foreach (var imageUrl in tweet.ImagesUrl)
-                                        {
-                                            albumMedia.Add(new InputMediaPhoto(imageUrl)
-                                            {
-                                                Caption = tweet.TelegramFormatedText,
-                                                ParseMode = ParseMode.Html
-                                            });
-                                        }
+                        data = await TwitterScraper.ExtractContent(uri);
+                    }
+                    else if (uri.Host.Contains("instagram.com"))
+                    {
+                        data = await InstagramScraper.ExtractContent(uri);
+                    }
 
-                                        if (albumMedia.Count > 0)
-                                        {
-                                            _ = await botClient.SendMediaGroupAsync(message.Chat, albumMedia, replyToMessageId: message.MessageId);
-                                            return;
-                                        }
-                                    }
-                                    break;
-                                case TweetType.Video:
-                                    if (tweet.VideoStream != null)
+                    if (data != null)
+                    {
+                        switch (data.Type)
+                        {
+                            case DataStructures.ScrapedDataType.Photo:
+                                if (data.ImagesUrl != null &&
+                                    data.ImagesUrl.Any())
+                                {
+                                    var albumMedia = new List<IAlbumInputMedia>();
+                                    foreach (var imageUrl in data.ImagesUrl)
                                     {
-                                        var inputFile = new InputOnlineFile(tweet.VideoStream);
-                                        _ = await botClient.SendVideoAsync(message.Chat, inputFile, caption: tweet.TelegramFormatedText, parseMode: ParseMode.Html, replyToMessageId: message.MessageId);
+                                        albumMedia.Add(new InputMediaPhoto(imageUrl)
+                                        {
+                                            Caption = data.TelegramFormatedText,
+                                            ParseMode = ParseMode.Html
+                                        });
+                                    }
+
+                                    if (albumMedia.Count > 0)
+                                    {
+                                        _ = await botClient.SendMediaGroupAsync(message.Chat, albumMedia, replyToMessageId: message.MessageId);
                                         return;
                                     }
-                                    break;
-                                case TweetType.Article:
-                                    _ = await botClient.SendTextMessageAsync(message.Chat, tweet.TelegramFormatedText, parseMode: ParseMode.Html, replyToMessageId: message.MessageId);
+                                }
+                                break;
+                            case DataStructures.ScrapedDataType.Video:
+                                if (data.VideoStream != null)
+                                {
+                                    var inputFile = new InputOnlineFile(data.VideoStream);
+                                    _ = await botClient.SendVideoAsync(message.Chat, inputFile, caption: data.TelegramFormatedText, parseMode: ParseMode.Html, replyToMessageId: message.MessageId);
                                     return;
-                            }
-
+                                }
+                                break;
+                            case DataStructures.ScrapedDataType.Article:
+                                _ = await botClient.SendTextMessageAsync(message.Chat, data.TelegramFormatedText, parseMode: ParseMode.Html, replyToMessageId: message.MessageId);
+                                return;
                         }
                     }
-                    #endregion
 
                     #region Generic
 
