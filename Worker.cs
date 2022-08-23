@@ -11,7 +11,7 @@ namespace TelegramMediaGrabberBot
         private readonly TelegramBotClient _telegramClient;
 
 
-        public Worker(ILogger<Worker> logger, AppSettings appSettings)
+        public Worker(ILogger<Worker> logger, ILoggerFactory loggerFactory, AppSettings appSettings)
         {
             ArgumentNullException.ThrowIfNull(appSettings);
             ArgumentNullException.ThrowIfNull(appSettings.TelegramBotConfig);
@@ -21,6 +21,9 @@ namespace TelegramMediaGrabberBot
             ArgumentNullException.ThrowIfNull(appSettings.SupportedWebSites);
 
             _logger = logger;
+
+            ApplicationLogging.LoggerFactory = loggerFactory;
+
             _telegramClient = new TelegramBotClient(appSettings.TelegramBotConfig.BotToken);
 
             TelegramUpdateHandlers.WhitelistedGroups.AddRange(appSettings.WhitelistedGroups);

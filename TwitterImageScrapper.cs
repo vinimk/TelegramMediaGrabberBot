@@ -6,6 +6,7 @@ namespace TelegramMediaGrabberBot
 {
     public static class TwitterImageScrapper
     {
+        private static readonly ILogger log = ApplicationLogging.CreateLogger("TwitterImageScrapper");
         public static readonly List<string?> NitterInstances;
         static TwitterImageScrapper() => NitterInstances = new();
 

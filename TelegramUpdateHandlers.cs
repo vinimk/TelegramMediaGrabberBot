@@ -10,6 +10,7 @@ namespace TelegramMediaGrabberBot
 {
     public static class TelegramUpdateHandlers
     {
+        private static readonly ILogger log = ApplicationLogging.CreateLogger("TwitterImageScrapper");
 
         public static readonly List<long?> WhitelistedGroups;
         public static readonly List<string> SupportedWebSites;
@@ -49,82 +50,97 @@ namespace TelegramMediaGrabberBot
 
         private static async Task BotOnMessageReceived(ITelegramBotClient botClient, Message message)
         {
-            if (message.Text is not { } messageText)
-                return;
-
-            if (WhitelistedGroups != null &&
-                !WhitelistedGroups.Contains(message.Chat.Id))
+            try
             {
-                string? notAllowedMessage = Properties.Resources.ResourceManager.GetString("GroupNotAllowed");
-                if (!string.IsNullOrEmpty(notAllowedMessage))
-                {
-                    _ = botClient.SendTextMessageAsync(message.Chat, notAllowedMessage);
-                }
-            }
-
-            var linkParser = new Regex(@"http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            foreach (var uri in from Match match in linkParser.Matches(message.Text)
-                                let uri = new Uri(match.Value)
-                                select uri)
-            {
-                if (!SupportedWebSites.Any(s => uri.Host.Contains(s, StringComparison.CurrentCultureIgnoreCase)))
+                if (message.Text is not { } messageText)
                     return;
 
-                #region twitter.com
-                if (uri.Host.Contains("twitter.com"))
+                if (WhitelistedGroups != null &&
+                    !WhitelistedGroups.Contains(message.Chat.Id))
                 {
-                    var tweet = await TwitterImageScrapper.ExtractTweetContent(uri);
-                    if (tweet != null)
+                    string? notAllowedMessage = Properties.Resources.ResourceManager.GetString("GroupNotAllowed");
+                    if (!string.IsNullOrEmpty(notAllowedMessage))
                     {
-                        switch (tweet.Type)
-                        {
-                            case TweetType.Photo:
-                                if (tweet.ImagesUrl != null &&
-                                    tweet.ImagesUrl.Any())
-                                {
-                                    var albumMedia = new List<IAlbumInputMedia>();
-                                    foreach (var imageUrl in tweet.ImagesUrl)
-                                    {
-                                        albumMedia.Add(new InputMediaPhoto(imageUrl)
-                                        {
-                                            Caption = tweet.TelegramFormatedText,
-                                            ParseMode = ParseMode.Html
-                                        });
-                                    }
-
-                                    if (albumMedia.Count > 0)
-                                    {
-                                        _ = botClient.SendMediaGroupAsync(message.Chat, albumMedia, replyToMessageId: message.MessageId);
-                                        return;
-                                    }
-                                }
-                                break;
-                            case TweetType.Video:
-                                if (tweet.VideoStream != null)
-                                {
-                                    var inputFile = new InputOnlineFile(tweet.VideoStream);
-                                    _ = botClient.SendVideoAsync(message.Chat, inputFile, caption: tweet.TelegramFormatedText, parseMode: ParseMode.Html, replyToMessageId: message.MessageId);
-                                    return;
-                                }
-                                break;
-                            case TweetType.Article:
-                                _ = botClient.SendTextMessageAsync(message.Chat, tweet.TelegramFormatedText, replyToMessageId: message.MessageId);
-                                return;
-                        }
-
+                        _ = botClient.SendTextMessageAsync(message.Chat, notAllowedMessage);
                     }
                 }
-                #endregion
 
-                #region Generic
-
-                using var videoStream = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri);
-                if (videoStream != null)
+                var linkParser = new Regex(@"http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                foreach (var uri in from Match match in linkParser.Matches(message.Text)
+                                    let uri = new Uri(match.Value)
+                                    select uri)
                 {
-                    var inputFile = new InputOnlineFile(videoStream);
-                    _ = botClient.SendVideoAsync(message.Chat, inputFile, caption: uri.AbsoluteUri, replyToMessageId: message.MessageId);
+                    if (!SupportedWebSites.Any(s => uri.Host.Contains(s, StringComparison.CurrentCultureIgnoreCase)))
+                    {
+                        log.LogInformation($"Ignoring message {message.Text} because of no valid url");
+                        return;
+                    }
+                    #region twitter.com
+                    if (uri.Host.Contains("twitter.com"))
+                    {
+                        var tweet = await TwitterImageScrapper.ExtractTweetContent(uri);
+                        if (tweet != null)
+                        {
+                            switch (tweet.Type)
+                            {
+                                case TweetType.Photo:
+                                    if (tweet.ImagesUrl != null &&
+                                        tweet.ImagesUrl.Any())
+                                    {
+                                        var albumMedia = new List<IAlbumInputMedia>();
+                                        foreach (var imageUrl in tweet.ImagesUrl)
+                                        {
+                                            albumMedia.Add(new InputMediaPhoto(imageUrl)
+                                            {
+                                                Caption = tweet.TelegramFormatedText,
+                                                ParseMode = ParseMode.Html
+                                            });
+                                        }
+
+                                        if (albumMedia.Count > 0)
+                                        {
+                                            _ = await botClient.SendMediaGroupAsync(message.Chat, albumMedia, replyToMessageId: message.MessageId);
+                                            return;
+                                        }
+                                    }
+                                    break;
+                                case TweetType.Video:
+                                    if (tweet.VideoStream != null)
+                                    {
+                                        var inputFile = new InputOnlineFile(tweet.VideoStream);
+                                        _ = await botClient.SendVideoAsync(message.Chat, inputFile, caption: tweet.TelegramFormatedText, parseMode: ParseMode.Html, replyToMessageId: message.MessageId);
+                                        return;
+                                    }
+                                    break;
+                                case TweetType.Article:
+                                    _ = await botClient.SendTextMessageAsync(message.Chat, tweet.TelegramFormatedText, parseMode: ParseMode.Html, replyToMessageId: message.MessageId);
+                                    return;
+                            }
+
+                        }
+                    }
+                    #endregion
+
+                    #region Generic
+
+                    using var videoStream = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri);
+                    if (videoStream != null)
+                    {
+                        log.LogInformation($"downloaded video for url {uri.AbsoluteUri} size: {videoStream.Length / 1024 / 1024}MB");
+                        var inputFile = new InputOnlineFile(videoStream);
+                        _ = await botClient.SendVideoAsync(message.Chat, inputFile, caption: uri.AbsoluteUri, replyToMessageId: message.MessageId);
+                    }
+                    else
+                    {
+                        log.LogError($"Stream invalid for url {uri.AbsoluteUri}");
+
+                    }
+                    #endregion
                 }
-                #endregion
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Unhandled exception");
             }
         }
 
