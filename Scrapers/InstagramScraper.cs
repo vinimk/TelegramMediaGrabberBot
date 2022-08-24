@@ -40,9 +40,13 @@ namespace TelegramMediaGrabberBot.Scrapers
                                 Url = instagramUrl.AbsoluteUri
                             };
 
-                            string content = HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//p[@class='structured-text description']").InnerText);
+                            var nodeContent = doc.DocumentNode.SelectSingleNode("//p[@class='structured-text description']");
+                            if(nodeContent != null)
+                            { 
+                                string content = HttpUtility.HtmlDecode(nodeContent.InnerText);
 
-                            scraped.Content = content;
+                                scraped.Content = content;
+                            }
 
                             string tweetAuthor = HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//a[@class='name']").InnerText);
 
