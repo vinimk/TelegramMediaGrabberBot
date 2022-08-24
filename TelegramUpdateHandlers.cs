@@ -62,7 +62,8 @@ namespace TelegramMediaGrabberBot
                     string? notAllowedMessage = Properties.Resources.ResourceManager.GetString("GroupNotAllowed");
                     if (!string.IsNullOrEmpty(notAllowedMessage))
                     {
-                        _ = botClient.SendTextMessageAsync(message.Chat, notAllowedMessage);
+                        _ = await botClient.SendTextMessageAsync(message.Chat, notAllowedMessage);
+                        return;
                     }
                 }
 
