@@ -6,8 +6,9 @@ namespace TelegramMediaGrabberBot
 {
     public static class YtDownloader
     {
+        private static DateTime LastUpdateOfYtDlp;
         private static readonly ILogger log = ApplicationLogging.CreateLogger("YtDownloader");
-
+        static YtDownloader() => LastUpdateOfYtDlp = new();
         public static async Task<Stream?> DownloadVideoFromUrlAsync(string url, bool updatedYtDl = false)
         {
             var fileName = $"tmp/{Guid.NewGuid()}";
@@ -40,20 +41,28 @@ namespace TelegramMediaGrabberBot
             {
                 if (stdErrBuffer.Length > 0)
                 {
-                    stdOutBuffer.Clear();
                     log.LogError(stdErrBuffer.ToString());
 
-                    _ = await Cli.Wrap("yt-dlp")
-                    .WithValidation(CommandResultValidation.None)
-                    .WithArguments(new[] {
-                    "-U" })
-                    .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
-                    .ExecuteBufferedAsync();
+                    if (DateTime.Compare(LastUpdateOfYtDlp, DateTime.Now.AddDays(-1)) < 0) //update only once a day
+                    {
+                        LastUpdateOfYtDlp = DateTime.Now;
+                        StringBuilder stdOutBufferUpdate = new();
 
-                    log.LogInformation(stdOutBuffer.ToString());
+                        log.LogInformation("Updating yt-dlp");
 
-                    if (!updatedYtDl)
-                        return await DownloadVideoFromUrlAsync(url, true);
+                        _ = await Cli.Wrap("yt-dlp")
+                            .WithArguments(new[] {
+                            "-U"
+                            })
+                        .WithValidation(CommandResultValidation.None)
+                        .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBufferUpdate))
+                        .ExecuteBufferedAsync();
+
+                        log.LogInformation(stdOutBufferUpdate.ToString());
+
+                        if (!updatedYtDl)
+                            return await DownloadVideoFromUrlAsync(url, true);
+                    }
                 }
             }
 

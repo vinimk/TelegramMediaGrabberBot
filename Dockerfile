@@ -41,8 +41,13 @@ RUN set -ex && \
     tar -xzf /tmp/${s6_package} -C / && \
     rm -rf /tmp/*
 
+#RUN set -x && \
+#    python3 -m pip --no-cache-dir install -U yt-dlp
 RUN set -x && \
-    python3 -m pip --no-cache-dir install yt-dlp
+    wget 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp' -P /tmp/yt-dlp/ && \
+    chmod -R a+x /tmp/yt-dlp/* && \
+    mv /tmp/yt-dlp/yt-dlp /usr/local/bin/ && \
+    rm -rf /tmp/*
 
 WORKDIR /app
 

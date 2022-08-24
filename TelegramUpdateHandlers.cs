@@ -66,9 +66,9 @@ namespace TelegramMediaGrabberBot
                     }
                 }
 
-                var linkParser = new Regex(@"http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                var linkParser = new Regex(@"([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
                 foreach (var uri in from Match match in linkParser.Matches(message.Text)
-                                    let uri = new Uri(match.Value)
+                                    let uri = new UriBuilder(match.Value).Uri
                                     select uri)
                 {
                     if (!SupportedWebSites.Any(s => uri.Host.Contains(s, StringComparison.CurrentCultureIgnoreCase)))

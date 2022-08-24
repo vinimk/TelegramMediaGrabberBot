@@ -14,6 +14,8 @@ IHost host = Host.CreateDefaultBuilder(args)
 
         var nitterInstances = hostContext.Configuration.GetSection("NitterInstances").Get<List<string?>>();
 
+        var bibliogramInstances = hostContext.Configuration.GetSection("BibliogramInstances").Get<List<string?>>();
+
         var supportedWebSites = hostContext.Configuration.GetSection("SupportedWebSites").Get<List<string>>();
 
         AppSettings appSettings = new()
@@ -21,8 +23,9 @@ IHost host = Host.CreateDefaultBuilder(args)
             TelegramBotConfig = telegramBotConfig,
             WhitelistedGroups = whiteListedGroups,
             NitterInstances = nitterInstances,
+            BibliogramInstances = bibliogramInstances,
             SupportedWebSites = supportedWebSites
-        }; ;
+        };
         services.AddSingleton<AppSettings>(appSettings);
 
         services.AddHostedService<Worker>();

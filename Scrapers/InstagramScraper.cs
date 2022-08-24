@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
-using System.Net.Http.Headers;
+﻿using HtmlAgilityPack;
+using System.Web;
 using TelegramMediaGrabberBot.DataStructures;
 
 namespace TelegramMediaGrabberBot.Scrapers
@@ -7,64 +7,102 @@ namespace TelegramMediaGrabberBot.Scrapers
 
     public static class InstagramScraper
     {
-        private static readonly string apiSufix = "?__a=1&__d=dis";
         private static readonly ILogger log = ApplicationLogging.CreateLogger("InstagramScraper");
+        public static readonly List<string?> BibliogramInstances;
+        static InstagramScraper() => BibliogramInstances = new();
 
         public static async Task<ScrapedData?> ExtractContent(Uri instagramUrl)
         {
-            var stringUrl = instagramUrl.ToString() + apiSufix;
-
-            using HttpClient httpClient = new();
-            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0");
-            httpClient.DefaultRequestHeaders.Accept
-                .Add(new MediaTypeWithQualityHeaderValue("application/json")); //ACCEPT header
-            var response = await httpClient.GetAsync(stringUrl);
-            if (response.IsSuccessStatusCode)
+            if (BibliogramInstances != null)
             {
-                var stringResponse = await response.Content.ReadAsStringAsync();
-                log.LogInformation(stringResponse);
-                dynamic result = JObject.Parse(stringResponse);
-                if (result != null)
+                foreach (var bibliogramInstance in BibliogramInstances)
                 {
-                    var item = result.graphql.shortcode_media;
-                    string mediaType = item.__typename;
-
-                    ScrapedData scraped = new()
+                    try
                     {
-                        Author = $"{item.owner.full_name} (@{item.owner.username})",
-                        Url = instagramUrl.ToString(),
-                        Content = item.edge_media_to_caption.edges[0].node.text
-                    };
+                        var newUriBuilder = new UriBuilder(instagramUrl)
+                        {
+                            Host = bibliogramInstance
+                        };
 
-                    switch (mediaType)
-                    {
-                        case "GraphImage": //photo
-                            scraped.Type = ScrapedDataType.Photo;
-                            if (scraped.ImagesUrl != null)
+                        // get a Uri instance from the UriBuilder
+                        var newUri = newUriBuilder.Uri;
+
+
+                        using HttpClient client = new();
+                        var response = await client.GetAsync(newUri.AbsoluteUri);
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var doc = new HtmlDocument();
+                            doc.Load(await response.Content.ReadAsStreamAsync());
+
+                            ScrapedData scraped = new()
                             {
-                                scraped.ImagesUrl.Add(item.display_url.ToString());
-                            }
-                            break;
-                        case "GraphVideo": //video
-                            scraped.Type = ScrapedDataType.Video;
-                            var videoStream = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
-                            scraped.VideoStream = videoStream;
-                            break;
-                        case "GraphSidecar": //album
-                            scraped.Type = ScrapedDataType.Photo;
-                            foreach (dynamic edgeItem in item.edge_sidecar_to_children.edges)
+                                Url = instagramUrl.AbsoluteUri
+                            };
+
+                            string content = HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//p[@class='structured-text description']").InnerText);
+
+                            scraped.Content = content;
+
+                            string tweetAuthor = HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//a[@class='name']").InnerText);
+
+                            scraped.Author = tweetAuthor;
+
+                            string tweetType = HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//meta[@property='og:title']").GetAttributeValue("content", null));
+
+                            if (tweetType.StartsWith("Video by"))
                             {
-                                if (scraped.ImagesUrl != null)
+                                scraped.Type = DataStructures.ScrapedDataType.Video;
+                                var videoUrl = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").FirstChild.GetAttributeValue("src", null);
+
+                                if (!videoUrl.StartsWith("http"))
                                 {
-                                    scraped.ImagesUrl.Add(edgeItem.node.display_url.ToString());
+                                    videoUrl = bibliogramInstance + videoUrl;
+                                }
+
+                                var videoStream = await YtDownloader.DownloadVideoFromUrlAsync(videoUrl);
+                                if (videoStream == null) //if video download fails from bibliogram, download from instagram instead
+                                {
+                                    log.LogError($"Failed to download video from mirror {bibliogramInstance}, trying original instagram");
+                                    videoStream = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
+                                    if (videoStream == null) //if it also fails from instagram, try the other bibliogram instance
+                                    {
+                                        continue;
+                                    }
+                                }
+                                scraped.VideoStream = videoStream;
+                            }
+                            else if (tweetType.StartsWith("Photo by") ||
+                                tweetType.StartsWith("Post by"))
+                            {
+                                scraped.Type = DataStructures.ScrapedDataType.Photo;
+                                var imageUrls = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").ChildNodes
+                                 .Select(x => x.GetAttributeValue("src", null))
+                                 .Distinct()
+                                 .ToList();
+
+                                if (imageUrls.Count > 0 &&
+                                    scraped.ImagesUrl != null)
+                                {
+                                    foreach (string imgUrl in imageUrls)
+                                    {
+                                        if (!imgUrl.StartsWith("http"))
+                                        {
+                                            scraped.ImagesUrl.Add(bibliogramInstance + imgUrl);
+                                        }
+                                        else
+                                        {
+                                            scraped.ImagesUrl.Add(imgUrl);
+                                        }
+                                    }
                                 }
                             }
-                            break;
+                            return scraped;
+                        }
                     }
-                    return scraped;
+                    catch { }
                 }
             }
-
             return null;
         }
     }

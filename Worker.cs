@@ -19,6 +19,7 @@ namespace TelegramMediaGrabberBot
             ArgumentNullException.ThrowIfNull(appSettings.TelegramBotConfig.BotToken);
             ArgumentNullException.ThrowIfNull(appSettings.WhitelistedGroups);
             ArgumentNullException.ThrowIfNull(appSettings.NitterInstances);
+            ArgumentNullException.ThrowIfNull(appSettings.BibliogramInstances);
             ArgumentNullException.ThrowIfNull(appSettings.SupportedWebSites);
 
             _logger = logger;
@@ -30,6 +31,8 @@ namespace TelegramMediaGrabberBot
             TelegramUpdateHandlers.WhitelistedGroups.AddRange(appSettings.WhitelistedGroups);
 
             TwitterScraper.NitterInstances.AddRange(appSettings.NitterInstances);
+
+            InstagramScraper.BibliogramInstances.AddRange(appSettings.BibliogramInstances);
 
             TelegramUpdateHandlers.SupportedWebSites.AddRange(appSettings.SupportedWebSites);
 
@@ -46,6 +49,8 @@ namespace TelegramMediaGrabberBot
                                pollingErrorHandler: TelegramUpdateHandlers.PollingErrorHandler,
                                receiverOptions: receiverOptions,
                                cancellationToken: cts.Token);
+
+            _logger.LogInformation("Started receiving telegram messages");
 
         }
 
