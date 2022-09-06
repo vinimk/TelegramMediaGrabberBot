@@ -13,9 +13,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="CliWrap" Version="3.4.4" />
-		<PackageReference Include="GraphQL.Client" Version="5.1.0" />
-		<PackageReference Include="GraphQL.Client.Serializer.SystemTextJson" Version="5.1.0" />
+		<PackageReference Include="CliWrap" Version="3.5.0" />
 		<PackageReference Include="HtmlAgilityPack" Version="1.11.45" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />

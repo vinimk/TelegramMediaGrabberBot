@@ -48,13 +48,13 @@ namespace TelegramMediaGrabberBot.Scrapers
                                 scraped.Content = content;
                             }
 
-                            string tweetAuthor = HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//a[@class='name']").InnerText);
+                            string author = HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//a[@class='name']").InnerText);
 
-                            scraped.Author = tweetAuthor;
+                            scraped.Author = author;
 
-                            string tweetType = HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//meta[@property='og:title']").GetAttributeValue("content", null));
+                            string mediaType = HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//meta[@property='og:title']").GetAttributeValue("content", null));
 
-                            if (tweetType.StartsWith("Video by"))
+                            if (mediaType.StartsWith("Video by"))
                             {
                                 scraped.Type = DataStructures.ScrapedDataType.Video;
                                 var videoUrl = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").FirstChild.GetAttributeValue("src", null);
@@ -76,8 +76,8 @@ namespace TelegramMediaGrabberBot.Scrapers
                                 }
                                 scraped.VideoStream = videoStream;
                             }
-                            else if (tweetType.StartsWith("Photo by") ||
-                                tweetType.StartsWith("Post by"))
+                            else if (mediaType.StartsWith("Photo by") ||
+                                mediaType.StartsWith("Post by"))
                             {
                                 scraped.Type = DataStructures.ScrapedDataType.Photo;
                                 var imageUrls = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").ChildNodes
