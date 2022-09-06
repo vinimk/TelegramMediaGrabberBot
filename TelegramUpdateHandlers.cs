@@ -67,7 +67,7 @@ namespace TelegramMediaGrabberBot
                     }
                 }
 
-                var linkParser = new Regex(@"([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                var linkParser = new Regex(@"[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
                 foreach (var uri in from Match match in linkParser.Matches(message.Text)
                                     let uri = new UriBuilder(match.Value).Uri
                                     select uri)
