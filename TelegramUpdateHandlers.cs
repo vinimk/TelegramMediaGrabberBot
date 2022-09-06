@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
@@ -128,13 +129,13 @@ namespace TelegramMediaGrabberBot
                     }
 
                     #region Generic
-
-                    using var videoStream = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri);
+                    var urlRequest = await GetRealUrlFromMoved(uri.AbsoluteUri);
+                    using var videoStream = await YtDownloader.DownloadVideoFromUrlAsync(urlRequest);
                     if (videoStream != null)
                     {
-                        log.LogInformation($"downloaded video for url {uri.AbsoluteUri} size: {videoStream.Length / 1024 / 1024}MB");
+                        log.LogInformation($"downloaded video for url {urlRequest} size: {videoStream.Length / 1024 / 1024}MB");
                         var inputFile = new InputOnlineFile(videoStream);
-                        _ = await botClient.SendVideoAsync(message.Chat, inputFile, caption: uri.AbsoluteUri, replyToMessageId: message.MessageId);
+                        _ = await botClient.SendVideoAsync(message.Chat, inputFile, caption: urlRequest, replyToMessageId: message.MessageId);
                     }
                     else
                     {
@@ -149,6 +150,36 @@ namespace TelegramMediaGrabberBot
                 log.LogError(ex, "Unhandled exception");
             }
         }
+
+        public static async Task<string> GetRealUrlFromMoved(string url)
+        {
+            //this allows you to set the settings so that we can get the redirect url
+            var handler = new HttpClientHandler()
+            {
+                AllowAutoRedirect = false
+            };
+            string redirectedUrl = url;
+
+            using (HttpClient client = new(handler))
+            using (HttpResponseMessage response = await client.GetAsync(url))
+            using (HttpContent content = response.Content)
+            {
+                // ... Read the response to see if we have the redirected url
+                if (response.StatusCode == System.Net.HttpStatusCode.Found ||
+                    response.StatusCode == System.Net.HttpStatusCode.Moved)
+                {
+                    HttpResponseHeaders headers = response.Headers;
+                    if (headers != null && headers.Location != null)
+                    {
+                        redirectedUrl = headers.Location.AbsoluteUri;
+                        return await GetRealUrlFromMoved(redirectedUrl); //recursive call until we have the final url
+                    }
+                }
+            }
+
+            return redirectedUrl;
+        }
+
 
         public static Task PollingErrorHandler(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
