@@ -41,8 +41,8 @@ namespace TelegramMediaGrabberBot.Scrapers
                             };
 
                             var nodeContent = doc.DocumentNode.SelectSingleNode("//p[@class='structured-text description']");
-                            if(nodeContent != null)
-                            { 
+                            if (nodeContent != null)
+                            {
                                 string content = HttpUtility.HtmlDecode(nodeContent.InnerText);
 
                                 scraped.Content = content;
@@ -74,7 +74,7 @@ namespace TelegramMediaGrabberBot.Scrapers
                                         continue;
                                     }
                                 }
-                                scraped.VideoStream = videoStream;
+                                scraped.Video = videoStream;
                             }
                             else if (mediaType.StartsWith("Photo by") ||
                                 mediaType.StartsWith("Post by"))

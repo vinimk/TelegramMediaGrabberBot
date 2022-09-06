@@ -45,12 +45,16 @@ namespace TelegramMediaGrabberBot
                 ThrowPendingUpdates = true,
             };
 
+
             _telegramClient.StartReceiving(updateHandler: TelegramUpdateHandlers.HandleUpdateAsync,
                                pollingErrorHandler: TelegramUpdateHandlers.PollingErrorHandler,
                                receiverOptions: receiverOptions,
                                cancellationToken: cts.Token);
 
             _logger.LogInformation("Started receiving telegram messages");
+
+            YtDownloader.UpdateYtDlpAsync().Wait();
+
 
         }
 

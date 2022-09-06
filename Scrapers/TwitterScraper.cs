@@ -64,7 +64,7 @@ namespace TelegramMediaGrabberBot.Scrapers
                             case "video":
                                 scraped.Type = DataStructures.ScrapedDataType.Video;
                                 var videoStream = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri);
-                                scraped.VideoStream = videoStream;
+                                scraped.Video = videoStream;
                                 break;
 
                             case "photo":
