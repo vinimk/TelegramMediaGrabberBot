@@ -15,13 +15,6 @@ namespace TelegramMediaGrabberBot.DataStructures
             ImagesUrl = new();
         }
 
-        public string TelegramRawText
-        {
-            get
-            {
-                return $"{Author} :\n {Content}";
-            }
-        }
         public string TelegramFormatedText
         {
             get
@@ -39,7 +32,23 @@ namespace TelegramMediaGrabberBot.DataStructures
                 {
                     sb.Append($"<a href='{Url.Trim()}'><i>Link</i></a>");
                 }
-                return sb.ToString();
+
+                if (sb.Length > 1024 &&
+                    (this.Type == ScrapedDataType.Video ||
+                    this.Type == ScrapedDataType.Photo)
+                    )
+                {
+                    return sb.ToString().Substring(0, 1023);
+                }
+                else if (sb.Length > 2048 &&
+                    this.Type == ScrapedDataType.Article)
+                {
+                    return sb.ToString().Substring(0, 2047);
+                }
+                else
+                {
+                    return sb.ToString();
+                }
             }
         }
 
