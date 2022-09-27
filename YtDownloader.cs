@@ -12,7 +12,7 @@ namespace TelegramMediaGrabberBot
         static YtDownloader() => LastUpdateOfYtDlp = new();
         public static async Task<Video?> DownloadVideoFromUrlAsync(string url, bool updatedYtDl = false)
         {
-            var fileName = $"tmp/{Guid.NewGuid()}.mp4";
+            string fileName = $"tmp/{Guid.NewGuid()}.mp4";
 
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
@@ -21,8 +21,10 @@ namespace TelegramMediaGrabberBot
                 .WithArguments(new[] {
                     "-vU"
                     ,"-o", fileName
-                    ,"--add-header", "User-Agent:facebookexternalhit/1.1"
+                    ,"--add-header"
+                    ,"User-Agent:facebookexternalhit/1.1"
                     ,"--embed-metadata"
+                    ,"--exec" ,"echo"
                     , url })
                 //.WithWorkingDirectory("/usr/local/bin")
                 .WithValidation(CommandResultValidation.None)
@@ -33,25 +35,45 @@ namespace TelegramMediaGrabberBot
             if (stdOutBuffer.Length > 0)
             {
                 log.LogInformation(stdOutBuffer.ToString());
+
+                var output = stdOutBuffer.ToString().Split(Environment.NewLine);
+
+                fileName = output[output.Length - 2];
+
+                stdOutBuffer.Clear();
             }
 
             if (File.Exists(fileName))
             {
                 var bytes = await File.ReadAllBytesAsync(fileName);
                 Stream stream = new MemoryStream(bytes);
-
-                var tfile = TagLib.File.Create(fileName, "video/mp4", TagLib.ReadStyle.Average);
-                string? description = tfile.Tag.Description;
-                string? title = tfile.Tag.Title;
-                string? author = tfile.Tag.Performers.FirstOrDefault();
-
                 log.LogInformation($"downloaded video for url {url} size: {stream.Length / 1024.0f / 1024.0f}MB");
-                return new Video()
+
+                try
                 {
-                    Stream = stream,
-                    Content = title + " " + description,
-                    Author = author
-                };
+                    FileInfo fi = new FileInfo(fileName);
+
+                    var tfile = TagLib.File.Create(fileName, $"video/{fi.Extension.Replace(".", String.Empty)}", TagLib.ReadStyle.Average);
+
+                    string? description = tfile.Tag.Description;
+                    string? title = tfile.Tag.Title;
+                    string? author = tfile.Tag.Performers?.FirstOrDefault();
+                    return new Video()
+                    {
+                        Stream = stream,
+                        Content = title + " " + description,
+                        Author = author
+                    };
+                }
+                catch (Exception ex)
+                {
+                    log.LogError(ex, "metadata extraction");
+                    return new Video()
+                    {
+                        Stream = stream
+                    };
+                }
+
             }
             else
             {

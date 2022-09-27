@@ -12,7 +12,7 @@ namespace TelegramMediaGrabberBot
     public static class TelegramUpdateHandlers
     {
         private static readonly ILogger log = ApplicationLogging.CreateLogger("TelegramUpdateHandlers");
-
+        private static readonly Regex LinkParser = new(@"[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         public static readonly List<long?> WhitelistedGroups;
         public static readonly List<string> SupportedWebSites;
         static TelegramUpdateHandlers()
@@ -20,9 +20,6 @@ namespace TelegramMediaGrabberBot
             WhitelistedGroups = new();
             SupportedWebSites = new();
         }
-
-
-
 
         public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
@@ -67,21 +64,20 @@ namespace TelegramMediaGrabberBot
                     }
                 }
 
-                var linkParser = new Regex(@"[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-                foreach (var uri in from Match match in linkParser.Matches(message.Text)
+                foreach (var uri in from Match match in LinkParser.Matches(message.Text)
                                     let uri = new UriBuilder(match.Value).Uri
                                     select uri)
                 {
-                    if (!SupportedWebSites.Any(s => uri.Host.Contains(s, StringComparison.CurrentCultureIgnoreCase)))
+                    if (!SupportedWebSites.Any(s => uri.AbsoluteUri.Contains(s, StringComparison.CurrentCultureIgnoreCase)))
                     {
                         log.LogInformation($"Ignoring message {message.Text} because of no valid url");
                         return;
                     }
 
                     ScrapedData? data = null;
-                    if (uri.Host.Contains("twitter.com"))
+                    if (uri.AbsoluteUri.Contains("twitter.com"))
                         data = await TwitterScraper.ExtractContent(uri);
-                    else if (uri.Host.Contains("instagram.com"))
+                    else if (uri.AbsoluteUri.Contains("instagram.com"))
                         data = await InstagramScraper.ExtractContent(uri);
                     else
                         data = await GenericScrapper.ExtractContent(uri);
