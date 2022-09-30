@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using Microsoft.VisualBasic;
+using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
@@ -74,6 +75,9 @@ namespace TelegramMediaGrabberBot
                         return;
                     }
 
+                    await botClient.SendChatActionAsync(message.Chat, ChatAction.Typing);
+
+
                     ScrapedData? data = null;
                     if (uri.AbsoluteUri.Contains("twitter.com"))
                         data = await TwitterScraper.ExtractContent(uri);
@@ -90,6 +94,8 @@ namespace TelegramMediaGrabberBot
                                 if (data.ImagesUrl != null &&
                                     data.ImagesUrl.Any())
                                 {
+                                    await botClient.SendChatActionAsync(message.Chat, ChatAction.UploadPhoto);
+
                                     var albumMedia = new List<IAlbumInputMedia>();
                                     foreach (var imageUrl in data.ImagesUrl)
                                     {
@@ -111,6 +117,8 @@ namespace TelegramMediaGrabberBot
                                 if (data.Video != null &&
                                     data.Video.Stream != null)
                                 {
+                                    await botClient.SendChatActionAsync(message.Chat, ChatAction.UploadVideo);
+
                                     var inputFile = new InputOnlineFile(data.Video.Stream);
                                     _ = await botClient.SendVideoAsync(message.Chat, inputFile, caption: data.TelegramFormatedText, parseMode: ParseMode.Html, replyToMessageId: message.MessageId);
                                     return;
