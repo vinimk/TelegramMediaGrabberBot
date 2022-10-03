@@ -23,21 +23,29 @@ namespace TelegramMediaGrabberBot
 
         public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
-            var handler = update.Type switch
-            {
-                // UpdateType.Unknown:
-                // UpdateType.ChannelPost:
-                // UpdateType.EditedChannelPost:
-                // UpdateType.ShippingQuery:
-                // UpdateType.PreCheckoutQuery:
-                // UpdateType.Poll:
-                UpdateType.Message => BotOnMessageReceived(botClient, update.Message!),
-                //UpdateType.EditedMessage => BotOnMessageReceived(botClient, update.EditedMessage!),
-                _ => throw new NotImplementedException()
-            };
-
             try
             {
+                var handler = update.Type switch
+                {
+                    UpdateType.Message => BotOnMessageReceived(botClient, update.Message!),
+                    UpdateType.Unknown => Task.CompletedTask,
+                    UpdateType.InlineQuery => Task.CompletedTask,
+                    UpdateType.ChosenInlineResult => Task.CompletedTask,
+                    UpdateType.CallbackQuery => Task.CompletedTask,
+                    UpdateType.EditedMessage => Task.CompletedTask,
+                    UpdateType.ChannelPost => Task.CompletedTask,
+                    UpdateType.EditedChannelPost => Task.CompletedTask,
+                    UpdateType.ShippingQuery => Task.CompletedTask,
+                    UpdateType.PreCheckoutQuery => Task.CompletedTask,
+                    UpdateType.Poll => Task.CompletedTask,
+                    UpdateType.PollAnswer => Task.CompletedTask,
+                    UpdateType.MyChatMember => Task.CompletedTask,
+                    UpdateType.ChatMember => Task.CompletedTask,
+                    UpdateType.ChatJoinRequest => Task.CompletedTask,
+                    _ => Task.CompletedTask,
+                    //UpdateType.EditedMessage => BotOnMessageReceived(botClient, update.EditedMessage!),
+                };
+
                 await handler;
             }
             catch (Exception exception)
@@ -146,7 +154,7 @@ namespace TelegramMediaGrabberBot
                 _ => exception.ToString()
             };
 
-            Console.WriteLine(ErrorMessage);
+            log.LogError(ErrorMessage);
             return Task.CompletedTask;
         }
     }
