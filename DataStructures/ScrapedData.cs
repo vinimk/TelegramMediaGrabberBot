@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Web;
 
 namespace TelegramMediaGrabberBot.DataStructures
 {
@@ -22,11 +23,11 @@ namespace TelegramMediaGrabberBot.DataStructures
                 StringBuilder sb = new();
                 if (!String.IsNullOrWhiteSpace(Author))
                 {
-                    sb.Append($"<b>{Author.Trim()}</b>:\n");
+                    sb.Append($"<b>{HttpUtility.HtmlEncode(Author.Trim())}</b>:\n");
                 }
                 if (!String.IsNullOrWhiteSpace(Content))
                 {
-                    sb.Append($"{Content.Trim()}\n");
+                    sb.Append($"{HttpUtility.HtmlEncode(Content.Trim())}\n");
                 }
                 if (!String.IsNullOrWhiteSpace(Url))
                 {

@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
@@ -33,7 +32,7 @@ namespace TelegramMediaGrabberBot
                 // UpdateType.PreCheckoutQuery:
                 // UpdateType.Poll:
                 UpdateType.Message => BotOnMessageReceived(botClient, update.Message!),
-                UpdateType.EditedMessage => BotOnMessageReceived(botClient, update.EditedMessage!),
+                //UpdateType.EditedMessage => BotOnMessageReceived(botClient, update.EditedMessage!),
                 _ => throw new NotImplementedException()
             };
 

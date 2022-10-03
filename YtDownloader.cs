@@ -19,14 +19,13 @@ namespace TelegramMediaGrabberBot
 
             _ = await Cli.Wrap("yt-dlp")
                 .WithArguments(new[] {
-                    "-vU"
-                    ,"-o", fileName
+                    //"-vU"
+                    "-o", fileName
                     ,"--add-header"
                     ,"User-Agent:facebookexternalhit/1.1"
                     ,"--embed-metadata"
                     ,"--exec" ,"echo"
                     , url })
-                //.WithWorkingDirectory("/usr/local/bin")
                 .WithValidation(CommandResultValidation.None)
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
