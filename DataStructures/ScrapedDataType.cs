@@ -1,9 +1,8 @@
-﻿namespace TelegramMediaGrabberBot.DataStructures
+﻿namespace TelegramMediaGrabberBot.DataStructures;
+
+public enum ScrapedDataType
 {
-    public enum ScrapedDataType
-    {
-        Photo,
-        Video,
-        Article
-    }
+    Photo,
+    Video,
+    Article
 }

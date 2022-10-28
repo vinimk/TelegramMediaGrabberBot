@@ -1,0 +1,155 @@
+﻿using System.Text.RegularExpressions;
+using Telegram.Bot;
+using Telegram.Bot.Exceptions;
+using Telegram.Bot.Polling;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.InputFiles;
+using TelegramMediaGrabberBot.Config;
+using TelegramMediaGrabberBot.DataStructures;
+using TelegramMediaGrabberBot.Scrapers;
+
+namespace TelegramMediaGrabberBot.TelegramHandler;
+
+public class TelegramUpdateHandler : IUpdateHandler
+{
+    private readonly ITelegramBotClient _botClient;
+    private readonly ILogger<TelegramUpdateHandler> _logger;
+    private static readonly Regex LinkParser = new(@"[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private readonly List<long?> _whitelistedGroups;
+    private readonly List<string> _supportedWebSites;
+
+    public TelegramUpdateHandler(ITelegramBotClient botClient, ILogger<TelegramUpdateHandler> logger, AppSettings appSettings)
+    {
+        _botClient = botClient;
+        _logger = logger;
+        if (appSettings != null &&
+            appSettings.SupportedWebSites != null &&
+            appSettings.WhitelistedGroups != null)
+        {
+            _whitelistedGroups = appSettings.WhitelistedGroups;
+            _supportedWebSites = appSettings.SupportedWebSites;
+        }
+        else
+        {
+            throw new ArgumentNullException(nameof(appSettings));
+        }
+    }
+
+    public async Task HandleUpdateAsync(ITelegramBotClient _, Update update, CancellationToken cancellationToken)
+    {
+        var handler = update switch
+        {
+            { Message: { } message } => BotOnMessageReceived(message, cancellationToken),
+            _ => Task.CompletedTask
+        };
+
+        await handler;
+    }
+
+    private async Task BotOnMessageReceived(Message message, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (message.Text is not { } messageText)
+                return;
+
+            if (_whitelistedGroups != null &&
+                !_whitelistedGroups.Contains(message.Chat.Id))
+            {
+                string? notAllowedMessage = Properties.Resources.ResourceManager.GetString("GroupNotAllowed");
+                if (!string.IsNullOrEmpty(notAllowedMessage))
+                {
+                    _ = await _botClient.SendTextMessageAsync(message.Chat, notAllowedMessage, cancellationToken: cancellationToken);
+                    return;
+                }
+            }
+
+            foreach (var uri in from Match match in LinkParser.Matches(message.Text)
+                                let uri = new UriBuilder(match.Value).Uri
+                                select uri)
+            {
+                if (!_supportedWebSites.Any(s => uri.AbsoluteUri.Contains(s, StringComparison.CurrentCultureIgnoreCase)))
+                {
+                    _logger.LogInformation("Ignoring message {Message} because of no valid url", message.Text);
+                    return;
+                }
+
+                _ = _botClient.SendChatActionAsync(message.Chat, ChatAction.Typing, cancellationToken: cancellationToken);
+
+
+                ScrapedData? data = null;
+                if (uri.AbsoluteUri.Contains("twitter.com"))
+                    data = await TwitterScraper.ExtractContent(uri);
+                else if (uri.AbsoluteUri.Contains("instagram.com"))
+                    data = await InstagramScraper.ExtractContent(uri);
+                else
+                    data = await GenericScrapper.ExtractContent(uri);
+
+                if (data != null)
+                {
+                    switch (data.Type)
+                    {
+                        case ScrapedDataType.Photo:
+                            if (data.ImagesUrl != null &&
+                                data.ImagesUrl.Any())
+                            {
+                                _ = _botClient.SendChatActionAsync(message.Chat, ChatAction.UploadPhoto, cancellationToken: cancellationToken);
+
+                                var albumMedia = new List<IAlbumInputMedia>();
+                                foreach (var imageUrl in data.ImagesUrl)
+                                {
+                                    albumMedia.Add(new InputMediaPhoto(imageUrl)
+                                    {
+                                        Caption = data.TelegramFormatedText,
+                                        ParseMode = ParseMode.Html
+                                    });
+                                }
+
+                                if (albumMedia.Count > 0)
+                                {
+                                    _ = await _botClient.SendMediaGroupAsync(message.Chat, albumMedia, replyToMessageId: message.MessageId, cancellationToken: cancellationToken);
+                                    return;
+                                }
+                            }
+                            break;
+                        case ScrapedDataType.Video:
+                            if (data.Video != null &&
+                                data.Video.Stream != null)
+                            {
+                                _ = _botClient.SendChatActionAsync(message.Chat, ChatAction.UploadVideo, cancellationToken: cancellationToken);
+
+                                var inputFile = new InputOnlineFile(data.Video.Stream);
+                                _ = await _botClient.SendVideoAsync(message.Chat, inputFile, caption: data.TelegramFormatedText, parseMode: ParseMode.Html, replyToMessageId: message.MessageId, cancellationToken: cancellationToken);
+                                return;
+                            }
+                            break;
+                        case ScrapedDataType.Article:
+                            _ = await _botClient.SendTextMessageAsync(message.Chat, data.TelegramFormatedText, parseMode: ParseMode.Html, replyToMessageId: message.MessageId, cancellationToken: cancellationToken);
+                            return;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unhandled exception");
+        }
+    }
+
+
+    public async Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+    {
+        var ErrorMessage = exception switch
+        {
+            ApiRequestException apiRequestException => $"Telegram API Error:\n[{apiRequestException.ErrorCode}]\n{apiRequestException.Message}",
+            _ => exception.ToString()
+        };
+
+        _logger.LogInformation("HandleError: {ErrorMessage}", ErrorMessage);
+
+        // Cooldown in case of network connection error
+        if (exception is RequestException)
+            await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+    }
+}

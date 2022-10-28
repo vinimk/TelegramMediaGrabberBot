@@ -1,5 +1,6 @@
-using TelegramMediaGrabberBot;
+using Telegram.Bot;
 using TelegramMediaGrabberBot.Config;
+using TelegramMediaGrabberBot.TelegramHandler;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
@@ -26,9 +27,29 @@ IHost host = Host.CreateDefaultBuilder(args)
             BibliogramInstances = bibliogramInstances,
             SupportedWebSites = supportedWebSites
         };
+
         services.AddSingleton<AppSettings>(appSettings);
 
-        services.AddHostedService<Worker>();
+
+        services.AddHttpClient("telegram_bot_client")
+                .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>
+                {
+                    if (telegramBotConfig != null && telegramBotConfig.BotToken != null)
+                    {
+                        TelegramBotClientOptions options = new(telegramBotConfig.BotToken);
+
+                        return new TelegramBotClient(options, httpClient);
+                    }
+                    throw new NullReferenceException(nameof(telegramBotConfig));
+                });
+
+        services.AddHttpClient();
+
+
+        services.AddScoped<TelegramUpdateHandler>();
+        services.AddScoped<TelegramReceiverService>();
+
+        services.AddHostedService<TelegramPollingService>();
     })
     .Build();
 

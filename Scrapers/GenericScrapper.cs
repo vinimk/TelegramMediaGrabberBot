@@ -1,36 +1,32 @@
 ﻿using TelegramMediaGrabberBot.DataStructures;
 using TelegramMediaGrabberBot.Utils;
 
-namespace TelegramMediaGrabberBot.Scrapers
+namespace TelegramMediaGrabberBot.Scrapers;
+
+public static class GenericScrapper
 {
-    public static class GenericScrapper
+    public static async Task<ScrapedData?> ExtractContent(Uri uri)
     {
-        private static readonly ILogger log = ApplicationLogging.CreateLogger("GenericScraper");
-
-
-        public static async Task<ScrapedData?> ExtractContent(Uri uri)
+        try
         {
-            try
+            var urlRequest = await HttpUtils.GetRealUrlFromMoved(uri.AbsoluteUri);
+            var video = await YtDownloader.DownloadVideoFromUrlAsync(urlRequest);
+            if (video != null)
             {
-                var urlRequest = await HttpUtils.GetRealUrlFromMoved(uri.AbsoluteUri);
-                var video = await YtDownloader.DownloadVideoFromUrlAsync(urlRequest);
-                if (video != null)
+
+                ScrapedData scraped = new()
                 {
-
-                    ScrapedData scraped = new()
-                    {
-                        Url = urlRequest,
-                        Type = ScrapedDataType.Video,
-                        Video = video,
-                        Content = video.Content,
-                        Author = video.Author
-                    };
-                    return scraped;
-                }
+                    Url = urlRequest,
+                    Type = ScrapedDataType.Video,
+                    Video = video,
+                    Content = video.Content,
+                    Author = video.Author
+                };
+                return scraped;
             }
-            catch { }
-            return null;
         }
-
+        catch { }
+        return null;
     }
+
 }

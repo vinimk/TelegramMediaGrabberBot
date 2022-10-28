@@ -1,7 +1,6 @@
-﻿namespace TelegramMediaGrabberBot.Config
+﻿namespace TelegramMediaGrabberBot.Config;
+
+public class TelegramBotConfig
 {
-    public class TelegramBotConfig
-    {
-        public string? BotToken { get; set; }
-    }
+    public string? BotToken { get; set; }
 }
