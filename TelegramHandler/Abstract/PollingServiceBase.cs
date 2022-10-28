@@ -1,5 +1,4 @@
 ﻿using TelegramMediaGrabberBot.Config;
-using TelegramMediaGrabberBot.Scrapers;
 
 namespace TelegramMediaGrabberBot.TelegramHandler.Abstract;
 
@@ -18,7 +17,6 @@ public abstract class PollingServiceBase<TReceiverService> : BackgroundService
     public PollingServiceBase(ILogger<PollingServiceBase<TReceiverService>> logger, ILoggerFactory loggerFactory, IServiceProvider serviceProvider, AppSettings appSettings)
     {
         ArgumentNullException.ThrowIfNull(appSettings);
-        ArgumentNullException.ThrowIfNull(appSettings.WhitelistedGroups);
         ArgumentNullException.ThrowIfNull(appSettings.NitterInstances);
         ArgumentNullException.ThrowIfNull(appSettings.BibliogramInstances);
         ArgumentNullException.ThrowIfNull(appSettings.SupportedWebSites);
@@ -26,10 +24,6 @@ public abstract class PollingServiceBase<TReceiverService> : BackgroundService
         _logger = logger;
 
         ApplicationLogging.LoggerFactory = loggerFactory;
-
-        TwitterScraper.NitterInstances.AddRange(appSettings.NitterInstances);
-
-        InstagramScraper.BibliogramInstances.AddRange(appSettings.BibliogramInstances);
 
         YtDownloader.UpdateYtDlpAsync().Wait();
     }

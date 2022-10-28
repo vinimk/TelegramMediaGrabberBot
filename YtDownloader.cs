@@ -12,34 +12,38 @@ public static class YtDownloader
     static YtDownloader() => LastUpdateOfYtDlp = new();
     public static async Task<Video?> DownloadVideoFromUrlAsync(string url, bool updatedYtDl = false)
     {
-        string fileName = $"tmp/{Guid.NewGuid()}.mp4";
-
-        StringBuilder stdOutBuffer = new();
-        StringBuilder stdErrBuffer = new();
-
-        _ = await Cli.Wrap("yt-dlp")
-            .WithArguments(new[] {
-                //"-vU"
-                "-o", fileName
-                ,"--add-header"
-                ,"User-Agent:facebookexternalhit/1.1"
-                ,"--embed-metadata"
-                ,"--exec" ,"echo"
-                , url })
-            .WithValidation(CommandResultValidation.None)
-            .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
-            .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
-            .ExecuteBufferedAsync();
-
-        if (stdOutBuffer.Length > 0)
+        var urlResult = await Cli.Wrap("yt-dlp")
+                                .WithArguments(new[] {
+                                            "--get-url"
+                                            , url })
+                                .WithValidation(CommandResultValidation.None)
+                                .ExecuteBufferedAsync();
+        if (urlResult.StandardOutput.Length > 0 &&
+            urlResult.StandardOutput.Split("\n").Length <= 2) //workarround for some providers (youtube shorts for ex) that has different tracks for video/sound
         {
-            log.LogInformation(stdOutBuffer.ToString());
+            return new Video { contentUri = new Uri(urlResult.StandardOutput) };
+        }
 
-            var output = stdOutBuffer.ToString().Split(Environment.NewLine);
+        string fileName = $"tmp/{Guid.NewGuid()}.mp4";
+        var dlResult = await Cli.Wrap("yt-dlp")
+                                .WithArguments(new[] {
+                                            //"-vU"
+                                            "-o", fileName
+                                            ,"--add-header"
+                                            ,"User-Agent:facebookexternalhit/1.1"
+                                            ,"--embed-metadata"
+                                            ,"--exec" ,"echo"
+                                            , url })
+                                .WithValidation(CommandResultValidation.None)
+                                .ExecuteBufferedAsync();
+
+        if (dlResult.StandardOutput.Length > 0)
+        {
+            log.LogInformation(dlResult.StandardOutput);
+
+            var output = dlResult.StandardOutput.Split(Environment.NewLine);
 
             fileName = output[^2];
-
-            stdOutBuffer.Clear();
         }
 
         if (File.Exists(fileName))
@@ -76,9 +80,9 @@ public static class YtDownloader
         }
         else
         {
-            if (stdErrBuffer.Length > 0)
+            if (dlResult.StandardError.Length > 0)
             {
-                log.LogError(stdErrBuffer.ToString());
+                log.LogError(dlResult.StandardError.ToString());
 
                 if (DateTime.Compare(LastUpdateOfYtDlp, DateTime.Now.AddDays(-1)) < 0) //update only once a day
                 {

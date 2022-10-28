@@ -15,26 +15,24 @@ public class TelegramUpdateHandler : IUpdateHandler
 {
     private readonly ITelegramBotClient _botClient;
     private readonly ILogger<TelegramUpdateHandler> _logger;
+    private IHttpClientFactory _httpClientFactory;
+    private readonly Scraper _scraper;
+
     private static readonly Regex LinkParser = new(@"[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    private readonly List<long?> _whitelistedGroups;
+    private readonly List<long?>? _whitelistedGroups;
     private readonly List<string> _supportedWebSites;
 
-    public TelegramUpdateHandler(ITelegramBotClient botClient, ILogger<TelegramUpdateHandler> logger, AppSettings appSettings)
+    public TelegramUpdateHandler(ITelegramBotClient botClient, ILogger<TelegramUpdateHandler> logger, AppSettings appSettings, IHttpClientFactory httpClientFactory)
     {
+        ArgumentNullException.ThrowIfNull(appSettings.SupportedWebSites);
         _botClient = botClient;
         _logger = logger;
-        if (appSettings != null &&
-            appSettings.SupportedWebSites != null &&
-            appSettings.WhitelistedGroups != null)
-        {
-            _whitelistedGroups = appSettings.WhitelistedGroups;
-            _supportedWebSites = appSettings.SupportedWebSites;
-        }
-        else
-        {
-            throw new ArgumentNullException(nameof(appSettings));
-        }
+        _httpClientFactory = httpClientFactory;
+        _scraper = new Scraper(_httpClientFactory, appSettings);
+        _supportedWebSites = appSettings.SupportedWebSites;
+        _whitelistedGroups = appSettings.WhitelistedGroups;
     }
+
 
     public async Task HandleUpdateAsync(ITelegramBotClient _, Update update, CancellationToken cancellationToken)
     {
@@ -55,6 +53,7 @@ public class TelegramUpdateHandler : IUpdateHandler
                 return;
 
             if (_whitelistedGroups != null &&
+                _whitelistedGroups.Any() &&
                 !_whitelistedGroups.Contains(message.Chat.Id))
             {
                 string? notAllowedMessage = Properties.Resources.ResourceManager.GetString("GroupNotAllowed");
@@ -78,13 +77,8 @@ public class TelegramUpdateHandler : IUpdateHandler
                 _ = _botClient.SendChatActionAsync(message.Chat, ChatAction.Typing, cancellationToken: cancellationToken);
 
 
-                ScrapedData? data = null;
-                if (uri.AbsoluteUri.Contains("twitter.com"))
-                    data = await TwitterScraper.ExtractContent(uri);
-                else if (uri.AbsoluteUri.Contains("instagram.com"))
-                    data = await InstagramScraper.ExtractContent(uri);
-                else
-                    data = await GenericScrapper.ExtractContent(uri);
+                ScrapedData? data = await _scraper.GetScrapedDataFromUrlAsync(uri);
+
 
                 if (data != null)
                 {
@@ -109,24 +103,33 @@ public class TelegramUpdateHandler : IUpdateHandler
                                 if (albumMedia.Count > 0)
                                 {
                                     _ = await _botClient.SendMediaGroupAsync(message.Chat, albumMedia, replyToMessageId: message.MessageId, cancellationToken: cancellationToken);
-                                    return;
                                 }
                             }
                             break;
                         case ScrapedDataType.Video:
-                            if (data.Video != null &&
-                                data.Video.Stream != null)
+                            if (data.Video != null)
                             {
                                 _ = _botClient.SendChatActionAsync(message.Chat, ChatAction.UploadVideo, cancellationToken: cancellationToken);
-
-                                var inputFile = new InputOnlineFile(data.Video.Stream);
-                                _ = await _botClient.SendVideoAsync(message.Chat, inputFile, caption: data.TelegramFormatedText, parseMode: ParseMode.Html, replyToMessageId: message.MessageId, cancellationToken: cancellationToken);
-                                return;
+                                InputOnlineFile file;
+                                if (data.Video.contentUri != null)
+                                {
+                                    file = new InputOnlineFile(data.Video.contentUri);
+                                }
+                                else if (data.Video.Stream != null)
+                                {
+                                    file = new InputOnlineFile(data.Video.Stream);
+                                }
+                                else
+                                {
+                                    _logger.LogError("url {MessageUrl} no url or stream", uri);
+                                    return;
+                                }
+                                _ = await _botClient.SendVideoAsync(message.Chat, file, caption: data.TelegramFormatedText, parseMode: ParseMode.Html, replyToMessageId: message.MessageId, cancellationToken: cancellationToken);
                             }
                             break;
                         case ScrapedDataType.Article:
                             _ = await _botClient.SendTextMessageAsync(message.Chat, data.TelegramFormatedText, parseMode: ParseMode.Html, replyToMessageId: message.MessageId, cancellationToken: cancellationToken);
-                            return;
+                            break;
                     }
                 }
             }
@@ -136,7 +139,6 @@ public class TelegramUpdateHandler : IUpdateHandler
             _logger.LogError(ex, "Unhandled exception");
         }
     }
-
 
     public async Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
