@@ -15,7 +15,7 @@ public class TelegramUpdateHandler : IUpdateHandler
 {
     private readonly ITelegramBotClient _botClient;
     private readonly ILogger<TelegramUpdateHandler> _logger;
-    private IHttpClientFactory _httpClientFactory;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly Scraper _scraper;
 
     private static readonly Regex LinkParser = new(@"[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -36,7 +36,7 @@ public class TelegramUpdateHandler : IUpdateHandler
 
     public async Task HandleUpdateAsync(ITelegramBotClient _, Update update, CancellationToken cancellationToken)
     {
-        var handler = update switch
+        Task handler = update switch
         {
             { Message: { } message } => BotOnMessageReceived(message, cancellationToken),
             _ => Task.CompletedTask
@@ -50,7 +50,9 @@ public class TelegramUpdateHandler : IUpdateHandler
         try
         {
             if (message.Text is not { } messageText)
+            {
                 return;
+            }
 
             if (_whitelistedGroups != null &&
                 _whitelistedGroups.Any() &&
@@ -64,14 +66,18 @@ public class TelegramUpdateHandler : IUpdateHandler
                 }
             }
 
-            foreach (var uri in from Match match in LinkParser.Matches(message.Text)
-                                let uri = new UriBuilder(match.Value).Uri
-                                select uri)
+            foreach (Uri? uri in from Match match in LinkParser.Matches(message.Text)
+                                 let uri = new UriBuilder(match.Value).Uri
+                                 select uri)
             {
                 if (!_supportedWebSites.Any(s => uri.AbsoluteUri.Contains(s, StringComparison.CurrentCultureIgnoreCase)))
                 {
                     _logger.LogInformation("Ignoring message {Message} because of no valid url", message.Text);
                     return;
+                }
+                else
+                {
+                    _logger.LogInformation("Processing {URL} for chatName {chatName}", uri.AbsoluteUri, message.Chat.Title + message.Chat.Username);
                 }
 
                 _ = _botClient.SendChatActionAsync(message.Chat, ChatAction.Typing, cancellationToken: cancellationToken);
@@ -90,8 +96,8 @@ public class TelegramUpdateHandler : IUpdateHandler
                             {
                                 _ = _botClient.SendChatActionAsync(message.Chat, ChatAction.UploadPhoto, cancellationToken: cancellationToken);
 
-                                var albumMedia = new List<IAlbumInputMedia>();
-                                foreach (var imageUrl in data.ImagesUrl)
+                                List<IAlbumInputMedia> albumMedia = new();
+                                foreach (string imageUrl in data.ImagesUrl)
                                 {
                                     albumMedia.Add(new InputMediaPhoto(imageUrl)
                                     {
@@ -132,6 +138,10 @@ public class TelegramUpdateHandler : IUpdateHandler
                             break;
                     }
                 }
+                else
+                {
+                    _logger.LogError("Failed to download any data for {URL}", uri.AbsoluteUri);
+                }
             }
         }
         catch (Exception ex)
@@ -142,7 +152,7 @@ public class TelegramUpdateHandler : IUpdateHandler
 
     public async Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
-        var ErrorMessage = exception switch
+        string ErrorMessage = exception switch
         {
             ApiRequestException apiRequestException => $"Telegram API Error:\n[{apiRequestException.ErrorCode}]\n{apiRequestException.Message}",
             _ => exception.ToString()
@@ -152,6 +162,8 @@ public class TelegramUpdateHandler : IUpdateHandler
 
         // Cooldown in case of network connection error
         if (exception is RequestException)
+        {
             await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+        }
     }
 }

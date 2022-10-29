@@ -19,11 +19,10 @@ public class Scraper
 
     public async Task<ScrapedData?> GetScrapedDataFromUrlAsync(Uri uri)
     {
-        if (uri.AbsoluteUri.Contains("twitter.com"))
-            return await _twitterScraper.ExtractContentAsync(uri);
-        else if (uri.AbsoluteUri.Contains("instagram.com"))
-            return await _instagramScraper.ExtractContentAsync(uri);
-        else
-            return await _genericScraper.ExtractContentAsync(uri);
+        return uri.AbsoluteUri.Contains("twitter.com")
+            ? await _twitterScraper.ExtractContentAsync(uri)
+            : uri.AbsoluteUri.Contains("instagram.com")
+            ? await _instagramScraper.ExtractContentAsync(uri)
+            : await _genericScraper.ExtractContentAsync(uri);
     }
 }

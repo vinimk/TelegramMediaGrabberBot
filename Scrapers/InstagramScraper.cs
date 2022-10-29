@@ -8,7 +8,7 @@ public class InstagramScraper : ScraperBase
 {
 
     private readonly List<string?> _bibliogramInstances;
-    public InstagramScraper(IHttpClientFactory httpClientFactory, List<String?> bibliogramInstances)
+    public InstagramScraper(IHttpClientFactory httpClientFactory, List<string?> bibliogramInstances)
         : base(httpClientFactory)
     {
         ArgumentNullException.ThrowIfNull(bibliogramInstances);
@@ -17,25 +17,25 @@ public class InstagramScraper : ScraperBase
 
     public override async Task<ScrapedData?> ExtractContentAsync(Uri instagramUrl)
     {
-        foreach (var bibliogramInstance in _bibliogramInstances)
+        foreach (string? bibliogramInstance in _bibliogramInstances)
         {
             try
             {
-                var newUriBuilder = new UriBuilder(instagramUrl)
+                UriBuilder newUriBuilder = new(instagramUrl)
                 {
                     Host = bibliogramInstance
                 };
 
                 // get a Uri instance from the UriBuilder
-                var newUri = newUriBuilder.Uri;
+                Uri newUri = newUriBuilder.Uri;
 
 
                 using HttpClient client = _httpClientFactory.CreateClient();
                 client.Timeout = new TimeSpan(0, 0, 5);
-                var response = await client.GetAsync(newUri.AbsoluteUri);
+                HttpResponseMessage response = await client.GetAsync(newUri.AbsoluteUri);
                 if (response.IsSuccessStatusCode)
                 {
-                    var doc = new HtmlDocument();
+                    HtmlDocument doc = new();
                     doc.Load(await response.Content.ReadAsStreamAsync());
 
                     ScrapedData scraped = new()
@@ -43,7 +43,7 @@ public class InstagramScraper : ScraperBase
                         Url = instagramUrl.AbsoluteUri
                     };
 
-                    var nodeContent = doc.DocumentNode.SelectSingleNode("//p[@class='structured-text description']");
+                    HtmlNode nodeContent = doc.DocumentNode.SelectSingleNode("//p[@class='structured-text description']");
                     if (nodeContent != null)
                     {
                         string content = HttpUtility.HtmlDecode(nodeContent.InnerText);
@@ -60,14 +60,14 @@ public class InstagramScraper : ScraperBase
                     if (mediaType.StartsWith("Video by"))
                     {
                         scraped.Type = DataStructures.ScrapedDataType.Video;
-                        var videoUrl = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").FirstChild.GetAttributeValue("src", null);
+                        string videoUrl = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").FirstChild.GetAttributeValue("src", null);
 
                         if (!videoUrl.StartsWith("http"))
                         {
                             videoUrl = bibliogramInstance + videoUrl;
                         }
 
-                        var videoStream = await YtDownloader.DownloadVideoFromUrlAsync(videoUrl);
+                        Video? videoStream = await YtDownloader.DownloadVideoFromUrlAsync(videoUrl);
                         if (videoStream == null) //if video download fails from bibliogram, download from instagram instead
                         {
                             _logger.LogError("Failed to download video from mirror {bibliogramInstance}, trying original instagram", bibliogramInstance);
@@ -83,7 +83,7 @@ public class InstagramScraper : ScraperBase
                         mediaType.StartsWith("Post by"))
                     {
                         scraped.Type = DataStructures.ScrapedDataType.Photo;
-                        var imageUrls = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").ChildNodes
+                        List<string> imageUrls = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").ChildNodes
                          .Select(x => x.GetAttributeValue("src", null))
                          .Distinct()
                          .ToList();
@@ -111,7 +111,7 @@ public class InstagramScraper : ScraperBase
         }
 
         //as a last effort if everything fails, try direct download from yt-dlp
-        var video = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
-        return new ScrapedData { Type = ScrapedDataType.Video, Url = instagramUrl.AbsoluteUri, Video = video };
+        Video? video = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
+        return video != null ? new ScrapedData { Type = ScrapedDataType.Video, Url = instagramUrl.AbsoluteUri, Video = video } : null;
     }
 }

@@ -6,7 +6,7 @@ namespace TelegramMediaGrabberBot.DataStructures;
 public class ScrapedData : IDisposable
 {
     public string? Content { get; set; }
-    public List<String>? ImagesUrl { get; set; }
+    public List<string>? ImagesUrl { get; set; }
     public string? Author { get; set; }
     public string? Url { get; set; }
     public ScrapedDataType? Type { get; set; }
@@ -21,39 +21,33 @@ public class ScrapedData : IDisposable
         get
         {
             StringBuilder sb = new();
-            if (!String.IsNullOrWhiteSpace(Author))
+            if (!string.IsNullOrWhiteSpace(Author))
             {
-                sb.Append($"<b>{HttpUtility.HtmlEncode(Author.Trim())}</b>:\n");
+                _ = sb.Append($"<b>{HttpUtility.HtmlEncode(Author.Trim())}</b>:\n");
             }
-            if (!String.IsNullOrWhiteSpace(Content))
+            if (!string.IsNullOrWhiteSpace(Content))
             {
-                sb.Append($"{HttpUtility.HtmlEncode(Content.Trim())}\n");
+                _ = sb.Append($"{HttpUtility.HtmlEncode(Content.Trim())}\n");
             }
-            if (!String.IsNullOrWhiteSpace(Url))
+            if (!string.IsNullOrWhiteSpace(Url))
             {
-                sb.Append($"<a href='{Url.Trim()}'><i>Link</i></a>");
+                _ = sb.Append($"<a href='{Url.Trim()}'><i>Link</i></a>");
             }
 
-            if (sb.Length > 1024 &&
-                (this.Type == ScrapedDataType.Video ||
-                this.Type == ScrapedDataType.Photo)
-                )
-            {
-                return sb.ToString().Substring(0, 1023);
-            }
-            else if (sb.Length > 2048 &&
-                this.Type == ScrapedDataType.Article)
-            {
-                return sb.ToString().Substring(0, 2047);
-            }
-            else
-            {
-                return sb.ToString();
-            }
+            return sb.Length > 1024 &&
+                (Type == ScrapedDataType.Video ||
+                Type == ScrapedDataType.Photo)
+                ? sb.ToString()[..1023]
+                : sb.Length > 2048 &&
+                                Type == ScrapedDataType.Article
+                    ? sb.ToString()[..2047]
+                    : sb.ToString();
         }
     }
 
-    public void Dispose() => GC.SuppressFinalize(this);
-
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+    }
 }
 

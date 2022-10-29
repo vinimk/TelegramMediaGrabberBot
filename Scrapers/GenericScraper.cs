@@ -10,8 +10,8 @@ public class GenericScraper : ScraperBase
 
     public override async Task<ScrapedData?> ExtractContentAsync(Uri uri)
     {
-        var urlRequest = await HttpUtils.GetRealUrlFromMoved(uri.AbsoluteUri);
-        var video = await YtDownloader.DownloadVideoFromUrlAsync(urlRequest);
+        string urlRequest = await HttpUtils.GetRealUrlFromMoved(uri.AbsoluteUri);
+        Video? video = await YtDownloader.DownloadVideoFromUrlAsync(urlRequest);
         if (video != null)
         {
             ScrapedData scraped = new()

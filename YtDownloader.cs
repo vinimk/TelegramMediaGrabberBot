@@ -9,10 +9,14 @@ public static class YtDownloader
 {
     private static DateTime LastUpdateOfYtDlp;
     private static readonly ILogger log = ApplicationLogging.CreateLogger("YtDownloader");
-    static YtDownloader() => LastUpdateOfYtDlp = new();
+    static YtDownloader()
+    {
+        LastUpdateOfYtDlp = new();
+    }
+
     public static async Task<Video?> DownloadVideoFromUrlAsync(string url, bool updatedYtDl = false)
     {
-        var urlResult = await Cli.Wrap("yt-dlp")
+        BufferedCommandResult urlResult = await Cli.Wrap("yt-dlp")
                                 .WithArguments(new[] {
                                             "--get-url"
                                             , url })
@@ -25,7 +29,7 @@ public static class YtDownloader
         }
 
         string fileName = $"tmp/{Guid.NewGuid()}.mp4";
-        var dlResult = await Cli.Wrap("yt-dlp")
+        BufferedCommandResult dlResult = await Cli.Wrap("yt-dlp")
                                 .WithArguments(new[] {
                                             //"-vU"
                                             "-o", fileName
@@ -37,18 +41,18 @@ public static class YtDownloader
                                 .WithValidation(CommandResultValidation.None)
                                 .ExecuteBufferedAsync();
 
-        if (dlResult.StandardOutput.Length > 0)
+        if (dlResult.StandardOutput.Length > 0) //workarround for some providers (ie tiktok that return weird separated filenames)
         {
             log.LogInformation(dlResult.StandardOutput);
 
-            var output = dlResult.StandardOutput.Split(Environment.NewLine);
+            string[] output = dlResult.StandardOutput.Split(Environment.NewLine);
 
             fileName = output[^2];
         }
 
         if (File.Exists(fileName))
         {
-            var bytes = await File.ReadAllBytesAsync(fileName);
+            byte[] bytes = await File.ReadAllBytesAsync(fileName);
             Stream stream = new MemoryStream(bytes);
             log.LogInformation("downloaded video for url {url} size: {size}MB", url, stream.Length / 1024.0f / 1024.0f);
 
@@ -56,7 +60,7 @@ public static class YtDownloader
             {
                 FileInfo fi = new(fileName);
 
-                var tfile = TagLib.File.Create(fileName, $"video/{fi.Extension.Replace(".", String.Empty)}", TagLib.ReadStyle.Average);
+                TagLib.File tfile = TagLib.File.Create(fileName, $"video/{fi.Extension.Replace(".", string.Empty)}", TagLib.ReadStyle.Average);
 
                 string? description = tfile.Tag.Description;
                 string? title = tfile.Tag.Title;
@@ -92,7 +96,9 @@ public static class YtDownloader
                     await UpdateYtDlpAsync();
 
                     if (!updatedYtDl)
+                    {
                         return await DownloadVideoFromUrlAsync(url, true);
+                    }
                 }
             }
         }

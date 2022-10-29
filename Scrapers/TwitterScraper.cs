@@ -8,7 +8,7 @@ public class TwitterScraper : ScraperBase
 {
 
     public readonly List<string?> _nitterInstances;
-    public TwitterScraper(IHttpClientFactory httpClientFactory, List<String?> nitterInstances)
+    public TwitterScraper(IHttpClientFactory httpClientFactory, List<string?> nitterInstances)
     : base(httpClientFactory)
     {
         ArgumentNullException.ThrowIfNull(nitterInstances);
@@ -18,25 +18,25 @@ public class TwitterScraper : ScraperBase
     public override async Task<ScrapedData?> ExtractContentAsync(Uri twitterUrl)
     {
 
-        foreach (var nitterInstance in _nitterInstances)
+        foreach (string? nitterInstance in _nitterInstances)
         {
             try
             {
-                var newUriBuilder = new UriBuilder(twitterUrl)
+                UriBuilder newUriBuilder = new(twitterUrl)
                 {
                     Host = nitterInstance
                 };
 
                 // get a Uri instance from the UriBuilder
-                var newUri = newUriBuilder.Uri;
+                Uri newUri = newUriBuilder.Uri;
 
 
                 using HttpClient client = _httpClientFactory.CreateClient();
                 client.Timeout = new TimeSpan(0, 0, 5);
-                var response = await client.GetAsync(newUri.AbsoluteUri, HttpCompletionOption.ResponseHeadersRead);
-                var doc = new HtmlDocument();
+                HttpResponseMessage response = await client.GetAsync(newUri.AbsoluteUri, HttpCompletionOption.ResponseHeadersRead);
+                HtmlDocument doc = new();
                 doc.Load(await response.Content.ReadAsStreamAsync());
-                var metaNodes = doc.DocumentNode.SelectSingleNode("//head").Descendants("meta");
+                IEnumerable<HtmlNode> metaNodes = doc.DocumentNode.SelectSingleNode("//head").Descendants("meta");
 
 
                 ScrapedData scraped = new()
@@ -67,13 +67,13 @@ public class TwitterScraper : ScraperBase
                 {
                     case "video":
                         scraped.Type = DataStructures.ScrapedDataType.Video;
-                        var videoStream = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri);
+                        Video? videoStream = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri);
                         scraped.Video = videoStream;
                         break;
 
                     case "photo":
                         scraped.Type = DataStructures.ScrapedDataType.Photo;
-                        var imageStrings = metaNodes
+                        List<string> imageStrings = metaNodes
                          .Where(x => x.GetAttributeValue("property", null) == "og:image" &&
                          !x.GetAttributeValue("content", null).Contains("tw_video_thumb"))
                          .Select(x => x.GetAttributeValue("content", null))
@@ -97,8 +97,7 @@ public class TwitterScraper : ScraperBase
         }
 
         //as a last effort if everything fails, try direct download from yt-dlp
-        var video = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri);
-        return new ScrapedData { Type = ScrapedDataType.Video, Url = twitterUrl.AbsoluteUri, Video = video };
-
+        Video? video = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri);
+        return video != null ? new ScrapedData { Type = ScrapedDataType.Video, Url = twitterUrl.AbsoluteUri, Video = video } : null;
     }
 }

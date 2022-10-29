@@ -8,7 +8,7 @@ public static class HttpUtils
     public static async Task<string> GetRealUrlFromMoved(string url)
     {
         //this allows you to set the settings so that we can get the redirect url
-        var handler = new HttpClientHandler()
+        HttpClientHandler handler = new()
         {
             AllowAutoRedirect = false
         };
@@ -19,8 +19,8 @@ public static class HttpUtils
         using (HttpContent content = response.Content)
         {
             // ... Read the response to see if we have the redirected url
-            if (response.StatusCode == System.Net.HttpStatusCode.Found ||
-                response.StatusCode == System.Net.HttpStatusCode.Moved)
+            if (response.StatusCode is System.Net.HttpStatusCode.Found or
+                System.Net.HttpStatusCode.Moved)
             {
                 HttpResponseHeaders headers = response.Headers;
                 if (headers != null && headers.Location != null)
