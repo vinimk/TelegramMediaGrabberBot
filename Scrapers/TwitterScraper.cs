@@ -11,15 +11,8 @@ public class TwitterScraper : ScraperBase
     public TwitterScraper(IHttpClientFactory httpClientFactory, List<String?> nitterInstances)
     : base(httpClientFactory)
     {
-        if (nitterInstances != null)
-        {
-            _nitterInstances = nitterInstances;
-        }
-        else
-        {
-            ArgumentNullException argumentNullException = new(nameof(nitterInstances));
-            throw argumentNullException;
-        }
+        ArgumentNullException.ThrowIfNull(nitterInstances);
+        _nitterInstances = nitterInstances;
     }
 
     public override async Task<ScrapedData?> ExtractContentAsync(Uri twitterUrl)
@@ -39,6 +32,7 @@ public class TwitterScraper : ScraperBase
 
 
                 using HttpClient client = _httpClientFactory.CreateClient();
+                client.Timeout = new TimeSpan(0, 0, 5);
                 var response = await client.GetAsync(newUri.AbsoluteUri, HttpCompletionOption.ResponseHeadersRead);
                 var doc = new HtmlDocument();
                 doc.Load(await response.Content.ReadAsStreamAsync());
@@ -101,6 +95,10 @@ public class TwitterScraper : ScraperBase
             }
             catch { }//empty catch, if there is any issue with one nitter instance, it will go to the next one
         }
-        return null;
+
+        //as a last effort if everything fails, try direct download from yt-dlp
+        var video = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri);
+        return new ScrapedData { Type = ScrapedDataType.Video, Url = twitterUrl.AbsoluteUri, Video = video };
+
     }
 }

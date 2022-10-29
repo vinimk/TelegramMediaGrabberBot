@@ -31,6 +31,7 @@ public class InstagramScraper : ScraperBase
 
 
                 using HttpClient client = _httpClientFactory.CreateClient();
+                client.Timeout = new TimeSpan(0, 0, 5);
                 var response = await client.GetAsync(newUri.AbsoluteUri);
                 if (response.IsSuccessStatusCode)
                 {
@@ -108,6 +109,9 @@ public class InstagramScraper : ScraperBase
             }
             catch { }
         }
-        return null;
+
+        //as a last effort if everything fails, try direct download from yt-dlp
+        var video = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
+        return new ScrapedData { Type = ScrapedDataType.Video, Url = instagramUrl.AbsoluteUri, Video = video };
     }
 }
