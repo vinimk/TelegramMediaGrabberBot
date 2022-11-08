@@ -7,8 +7,8 @@ namespace TelegramMediaGrabberBot.Scrapers;
 public class TwitterScraper : ScraperBase
 {
 
-    public readonly List<string?> _nitterInstances;
-    public TwitterScraper(IHttpClientFactory httpClientFactory, List<string?> nitterInstances)
+    public readonly List<string> _nitterInstances;
+    public TwitterScraper(IHttpClientFactory httpClientFactory, List<string> nitterInstances)
     : base(httpClientFactory)
     {
         ArgumentNullException.ThrowIfNull(nitterInstances);
@@ -18,7 +18,7 @@ public class TwitterScraper : ScraperBase
     public override async Task<ScrapedData?> ExtractContentAsync(Uri twitterUrl)
     {
 
-        foreach (string? nitterInstance in _nitterInstances)
+        foreach (string nitterInstance in _nitterInstances)
         {
             try
             {

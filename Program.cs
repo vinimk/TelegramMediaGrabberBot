@@ -7,17 +7,17 @@ IHost host = Host.CreateDefaultBuilder(args)
     {
         IConfiguration configuration = hostContext.Configuration;
 
-        TelegramBotConfig telegramBotConfig = configuration
+        TelegramBotConfig? telegramBotConfig = configuration
         .GetSection("Telegram.Bot.Config")
         .Get<TelegramBotConfig>();
 
-        var whiteListedGroups = hostContext.Configuration.GetSection("WhitelistedGroupIds").Get<List<long?>>();
+        List<long?>? whiteListedGroups = hostContext.Configuration.GetSection("WhitelistedGroupIds").Get<List<long?>>();
 
-        var nitterInstances = hostContext.Configuration.GetSection("NitterInstances").Get<List<string?>>();
+        List<string>? nitterInstances = hostContext.Configuration.GetSection("NitterInstances").Get<List<string>>();
 
-        var bibliogramInstances = hostContext.Configuration.GetSection("BibliogramInstances").Get<List<string?>>();
+        List<string>? bibliogramInstances = hostContext.Configuration.GetSection("BibliogramInstances").Get<List<string>>();
 
-        var supportedWebSites = hostContext.Configuration.GetSection("SupportedWebSites").Get<List<string>>();
+        List<string>? supportedWebSites = hostContext.Configuration.GetSection("SupportedWebSites").Get<List<string>>();
 
         AppSettings appSettings = new()
         {
@@ -28,10 +28,10 @@ IHost host = Host.CreateDefaultBuilder(args)
             SupportedWebSites = supportedWebSites
         };
 
-        services.AddSingleton<AppSettings>(appSettings);
+        _ = services.AddSingleton<AppSettings>(appSettings);
 
 
-        services.AddHttpClient("telegram_bot_client")
+        _ = services.AddHttpClient("telegram_bot_client")
                 .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>
                 {
                     if (telegramBotConfig != null && telegramBotConfig.BotToken != null)
@@ -43,13 +43,13 @@ IHost host = Host.CreateDefaultBuilder(args)
                     throw new NullReferenceException(nameof(telegramBotConfig));
                 });
 
-        services.AddHttpClient();
+        _ = services.AddHttpClient();
 
 
-        services.AddScoped<TelegramUpdateHandler>();
-        services.AddScoped<TelegramReceiverService>();
+        _ = services.AddScoped<TelegramUpdateHandler>();
+        _ = services.AddScoped<TelegramReceiverService>();
 
-        services.AddHostedService<TelegramPollingService>();
+        _ = services.AddHostedService<TelegramPollingService>();
     })
     .Build();
 

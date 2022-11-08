@@ -7,8 +7,8 @@ namespace TelegramMediaGrabberBot.Scrapers;
 public class InstagramScraper : ScraperBase
 {
 
-    private readonly List<string?> _bibliogramInstances;
-    public InstagramScraper(IHttpClientFactory httpClientFactory, List<string?> bibliogramInstances)
+    private readonly List<string> _bibliogramInstances;
+    public InstagramScraper(IHttpClientFactory httpClientFactory, List<string> bibliogramInstances)
         : base(httpClientFactory)
     {
         ArgumentNullException.ThrowIfNull(bibliogramInstances);
@@ -17,7 +17,7 @@ public class InstagramScraper : ScraperBase
 
     public override async Task<ScrapedData?> ExtractContentAsync(Uri instagramUrl)
     {
-        foreach (string? bibliogramInstance in _bibliogramInstances)
+        foreach (string bibliogramInstance in _bibliogramInstances)
         {
             try
             {
@@ -62,22 +62,16 @@ public class InstagramScraper : ScraperBase
                         scraped.Type = DataStructures.ScrapedDataType.Video;
                         string videoUrl = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").FirstChild.GetAttributeValue("src", null);
 
-                        if (!videoUrl.StartsWith("http"))
+                        if (!videoUrl.StartsWith(bibliogramInstance))
                         {
-                            videoUrl = bibliogramInstance + videoUrl;
+                            videoUrl = "https://" + bibliogramInstance + videoUrl;
                         }
 
-                        Video? videoStream = await YtDownloader.DownloadVideoFromUrlAsync(videoUrl);
-                        if (videoStream == null) //if video download fails from bibliogram, download from instagram instead
-                        {
-                            _logger.LogError("Failed to download video from mirror {bibliogramInstance}, trying original instagram", bibliogramInstance);
-                            videoStream = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
-                            if (videoStream == null) //if it also fails from instagram, try the other bibliogram instance
-                            {
-                                continue;
-                            }
-                        }
-                        scraped.Video = videoStream;
+                        Uri videoUri = new(videoUrl);
+
+                        Video? video = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
+
+                        scraped.Video = video;
                     }
                     else if (mediaType.StartsWith("Photo by") ||
                         mediaType.StartsWith("Post by"))
@@ -111,7 +105,7 @@ public class InstagramScraper : ScraperBase
         }
 
         //as a last effort if everything fails, try direct download from yt-dlp
-        Video? video = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
-        return video != null ? new ScrapedData { Type = ScrapedDataType.Video, Url = instagramUrl.AbsoluteUri, Video = video } : null;
+        Video? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
+        return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Video, Url = instagramUrl.AbsoluteUri, Video = videoObj } : null;
     }
 }

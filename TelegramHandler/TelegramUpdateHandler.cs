@@ -11,14 +11,14 @@ using TelegramMediaGrabberBot.Scrapers;
 
 namespace TelegramMediaGrabberBot.TelegramHandler;
 
-public class TelegramUpdateHandler : IUpdateHandler
+public partial class TelegramUpdateHandler : IUpdateHandler
 {
     private readonly ITelegramBotClient _botClient;
     private readonly ILogger<TelegramUpdateHandler> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly Scraper _scraper;
 
-    private static readonly Regex LinkParser = new(@"[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex LinkParser = MyRegex();
     private readonly List<long?>? _whitelistedGroups;
     private readonly List<string> _supportedWebSites;
 
@@ -166,4 +166,7 @@ public class TelegramUpdateHandler : IUpdateHandler
             await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
         }
     }
+
+    [GeneratedRegex("[(http(s)?):\\/\\/(www\\.)?a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)", RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-GB")]
+    private static partial Regex MyRegex();
 }

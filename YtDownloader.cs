@@ -25,7 +25,7 @@ public static class YtDownloader
         if (urlResult.StandardOutput.Length > 0 &&
             urlResult.StandardOutput.Split("\n").Length <= 2) //workarround for some providers (youtube shorts for ex) that has different tracks for video/sound
         {
-            return new Video { contentUri = new Uri(urlResult.StandardOutput) };
+            return new Video { contentUri = new Uri(urlResult.StandardOutput.Replace("\n", "")) };
         }
 
         string fileName = $"tmp/{Guid.NewGuid()}.mp4";
