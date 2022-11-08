@@ -20,20 +20,18 @@ public class TwitterScraper : ScraperBase
 
         foreach (string nitterInstance in _nitterInstances)
         {
+            UriBuilder newUriBuilder = new(twitterUrl)
+            {
+                Host = nitterInstance
+            };
+
+            // get a Uri instance from the UriBuilder
+            Uri newUri = newUriBuilder.Uri;
             try
             {
-                UriBuilder newUriBuilder = new(twitterUrl)
-                {
-                    Host = nitterInstance
-                };
-
-                // get a Uri instance from the UriBuilder
-                Uri newUri = newUriBuilder.Uri;
-
-
-                using HttpClient client = _httpClientFactory.CreateClient();
-                client.Timeout = new TimeSpan(0, 0, 30);
-                HttpResponseMessage response = await client.GetAsync(newUri.AbsoluteUri, HttpCompletionOption.ResponseHeadersRead);
+                using HttpClient client = _httpClientFactory.CreateClient("default");
+                client.Timeout = new TimeSpan(0, 0, 5);
+                HttpResponseMessage response = await client.GetAsync(newUri.AbsoluteUri);
                 HtmlDocument doc = new();
                 doc.Load(await response.Content.ReadAsStreamAsync());
                 IEnumerable<HtmlNode> metaNodes = doc.DocumentNode.SelectSingleNode("//head").Descendants("meta");
@@ -95,7 +93,7 @@ public class TwitterScraper : ScraperBase
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed for nitter instance {instance}", nitterInstance);
+                _logger.LogError(ex, "Failed for nitter instance {instance}", newUri.AbsoluteUri);
             }//empty catch, if there is any issue with one nitter instance, it will go to the next one
         }
 

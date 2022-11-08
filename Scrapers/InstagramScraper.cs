@@ -19,8 +19,7 @@ public class InstagramScraper : ScraperBase
     {
         foreach (string bibliogramInstance in _bibliogramInstances)
         {
-            try
-            {
+
                 UriBuilder newUriBuilder = new(instagramUrl)
                 {
                     Host = bibliogramInstance
@@ -29,9 +28,10 @@ public class InstagramScraper : ScraperBase
                 // get a Uri instance from the UriBuilder
                 Uri newUri = newUriBuilder.Uri;
 
-
-                using HttpClient client = _httpClientFactory.CreateClient();
-                client.Timeout = new TimeSpan(0, 0, 30);
+            try
+            {
+                using HttpClient client = _httpClientFactory.CreateClient("default");
+                client.Timeout = new TimeSpan(0, 0, 5);
                 HttpResponseMessage response = await client.GetAsync(newUri.AbsoluteUri);
                 if (response.IsSuccessStatusCode)
                 {
@@ -103,7 +103,7 @@ public class InstagramScraper : ScraperBase
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed for bibliogram instance {instance}", bibliogramInstance);
+                _logger.LogError(ex, "Failed for bibliogram instance {instance}", newUri.AbsoluteUri);
             }//empty catch, if there is any issue with one nitter instance, it will go to the next one
         }
 
