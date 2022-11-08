@@ -1,10 +1,14 @@
 using Telegram.Bot;
+using TelegramMediaGrabberBot;
 using TelegramMediaGrabberBot.Config;
 using TelegramMediaGrabberBot.TelegramHandler;
+
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
     {
+        ILogger logger = services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
+
         IConfiguration configuration = hostContext.Configuration;
 
         TelegramBotConfig? telegramBotConfig = configuration
@@ -12,12 +16,17 @@ IHost host = Host.CreateDefaultBuilder(args)
         .Get<TelegramBotConfig>();
 
         List<long?>? whiteListedGroups = hostContext.Configuration.GetSection("WhitelistedGroupIds").Get<List<long?>>();
+        logger.LogInformation("whiteListedGroups {whiteListedGroups}", whiteListedGroups);
 
         List<string>? nitterInstances = hostContext.Configuration.GetSection("NitterInstances").Get<List<string>>();
+        logger.LogInformation("nitterInstances {nitterInstances}", nitterInstances);
 
         List<string>? bibliogramInstances = hostContext.Configuration.GetSection("BibliogramInstances").Get<List<string>>();
+        logger.LogInformation("bibliogramInstances {bibliogramInstances}", bibliogramInstances);
 
         List<string>? supportedWebSites = hostContext.Configuration.GetSection("SupportedWebSites").Get<List<string>>();
+        logger.LogInformation("supportedWebSites {supportedWebSites}", supportedWebSites);
+
 
         AppSettings appSettings = new()
         {

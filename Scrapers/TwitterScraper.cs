@@ -93,7 +93,10 @@ public class TwitterScraper : ScraperBase
                 }
                 return scraped;
             }
-            catch { }//empty catch, if there is any issue with one nitter instance, it will go to the next one
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed for nitter instance {instance}", nitterInstance);
+            }//empty catch, if there is any issue with one nitter instance, it will go to the next one
         }
 
         //as a last effort if everything fails, try direct download from yt-dlp

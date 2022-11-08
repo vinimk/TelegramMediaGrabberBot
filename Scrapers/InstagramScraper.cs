@@ -101,7 +101,10 @@ public class InstagramScraper : ScraperBase
                     return scraped;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed for bibliogram instance {instance}", bibliogramInstance);
+            }//empty catch, if there is any issue with one nitter instance, it will go to the next one
         }
 
         //as a last effort if everything fails, try direct download from yt-dlp
