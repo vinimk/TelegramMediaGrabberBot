@@ -32,7 +32,7 @@ public class TwitterScraper : ScraperBase
 
 
                 using HttpClient client = _httpClientFactory.CreateClient();
-                client.Timeout = new TimeSpan(0, 0, 5);
+                client.Timeout = new TimeSpan(0, 0, 30);
                 HttpResponseMessage response = await client.GetAsync(newUri.AbsoluteUri, HttpCompletionOption.ResponseHeadersRead);
                 HtmlDocument doc = new();
                 doc.Load(await response.Content.ReadAsStreamAsync());
