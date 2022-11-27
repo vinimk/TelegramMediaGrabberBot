@@ -20,13 +20,13 @@ public class InstagramScraper : ScraperBase
         foreach (string bibliogramInstance in _bibliogramInstances)
         {
 
-                UriBuilder newUriBuilder = new(instagramUrl)
-                {
-                    Host = bibliogramInstance
-                };
+            UriBuilder newUriBuilder = new(instagramUrl)
+            {
+                Host = bibliogramInstance
+            };
 
-                // get a Uri instance from the UriBuilder
-                Uri newUri = newUriBuilder.Uri;
+            // get a Uri instance from the UriBuilder
+            Uri newUri = newUriBuilder.Uri;
 
             try
             {

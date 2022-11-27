@@ -1,5 +1,4 @@
 using Telegram.Bot;
-using TelegramMediaGrabberBot;
 using TelegramMediaGrabberBot.Config;
 using TelegramMediaGrabberBot.TelegramHandler;
 
