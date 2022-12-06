@@ -89,6 +89,13 @@ public class TwitterScraper : ScraperBase
                     default:
                         break;
                 }
+
+                if (scraped.Type == ScrapedDataType.Article && string.IsNullOrWhiteSpace(scraped.Content))
+                {
+                    //if the content is empty and the type is an article, the tweet was not scrapped right so we ignore it
+                    continue;
+                }
+
                 return scraped;
             }
             catch (Exception ex)

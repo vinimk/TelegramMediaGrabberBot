@@ -4,7 +4,6 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.InputFiles;
 using TelegramMediaGrabberBot.Config;
 using TelegramMediaGrabberBot.DataStructures;
 using TelegramMediaGrabberBot.Scrapers;
@@ -99,7 +98,7 @@ public partial class TelegramUpdateHandler : IUpdateHandler
                                 List<IAlbumInputMedia> albumMedia = new();
                                 foreach (string imageUrl in data.ImagesUrl)
                                 {
-                                    albumMedia.Add(new InputMediaPhoto(imageUrl)
+                                    albumMedia.Add(new InputMediaPhoto(new InputFileUrl(imageUrl))
                                     {
                                         Caption = data.TelegramFormatedText,
                                         ParseMode = ParseMode.Html
@@ -116,14 +115,14 @@ public partial class TelegramUpdateHandler : IUpdateHandler
                             if (data.Video != null)
                             {
                                 _ = _botClient.SendChatActionAsync(message.Chat, ChatAction.UploadVideo, cancellationToken: cancellationToken);
-                                InputOnlineFile file;
+                                IInputFile file;
                                 if (data.Video.contentUri != null)
                                 {
-                                    file = new InputOnlineFile(data.Video.contentUri);
+                                    file = new InputFileUrl(data.Video.contentUri.AbsoluteUri);
                                 }
                                 else if (data.Video.Stream != null)
                                 {
-                                    file = new InputOnlineFile(data.Video.Stream);
+                                    file = new InputFile(data.Video.Stream);
                                 }
                                 else
                                 {
