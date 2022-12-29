@@ -90,19 +90,34 @@ public partial class TelegramUpdateHandler : IUpdateHandler
                     switch (data.Type)
                     {
                         case ScrapedDataType.Photo:
-                            if (data.ImagesUrl != null &&
-                                data.ImagesUrl.Any())
+                            if (data.Medias != null &&
+                                data.Medias.Any())
                             {
                                 _ = _botClient.SendChatActionAsync(message.Chat, ChatAction.UploadPhoto, cancellationToken: cancellationToken);
 
                                 List<IAlbumInputMedia> albumMedia = new();
-                                foreach (string imageUrl in data.ImagesUrl)
+                                foreach (var media in data.Medias)
                                 {
-                                    albumMedia.Add(new InputMediaPhoto(new InputFileUrl(imageUrl))
+                                    if (media.Url != null)
                                     {
-                                        Caption = data.TelegramFormatedText,
-                                        ParseMode = ParseMode.Html
-                                    });
+                                        var inputFileUrl = new InputFileUrl(media.Url);
+                                        if (media.Type == ScrapedDataType.Video)
+                                        {
+                                            albumMedia.Add(new InputMediaVideo(inputFileUrl)
+                                            {
+                                                Caption = data.TelegramFormatedText,
+                                                ParseMode = ParseMode.Html
+                                            });
+                                        }
+                                        else if (media.Type == ScrapedDataType.Photo)
+                                        {
+                                            albumMedia.Add(new InputMediaPhoto(inputFileUrl)
+                                            {
+                                                Caption = data.TelegramFormatedText,
+                                                ParseMode = ParseMode.Html
+                                            });
+                                        }
+                                    }
                                 }
 
                                 if (albumMedia.Count > 0)

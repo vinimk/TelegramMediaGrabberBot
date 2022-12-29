@@ -1,6 +1,7 @@
 ﻿using HtmlAgilityPack;
 using System.Web;
 using TelegramMediaGrabberBot.DataStructures;
+using static TelegramMediaGrabberBot.DataStructures.ScrapedData;
 
 namespace TelegramMediaGrabberBot.Scrapers;
 
@@ -71,16 +72,15 @@ public class TwitterScraper : ScraperBase
 
                     case "photo":
                         scraped.Type = DataStructures.ScrapedDataType.Photo;
-                        List<string> imageStrings = metaNodes
+                        var imageMedias = metaNodes
                          .Where(x => x.GetAttributeValue("property", null) == "og:image" &&
                          !x.GetAttributeValue("content", null).Contains("tw_video_thumb"))
-                         .Select(x => x.GetAttributeValue("content", null))
+                         .Select(x => new Media() { Url = x.GetAttributeValue("content", null), Type = ScrapedDataType.Photo })
                          .Distinct()
                          .ToList();
-
-                        if (imageStrings.Count > 0)
+                        if (imageMedias.Count > 0)
                         {
-                            scraped.ImagesUrl = imageStrings;
+                            scraped.Medias = imageMedias;
                         }
                         break;
                     case "article":

@@ -1,6 +1,7 @@
 ﻿using HtmlAgilityPack;
 using System.Web;
 using TelegramMediaGrabberBot.DataStructures;
+using static TelegramMediaGrabberBot.DataStructures.ScrapedData;
 
 namespace TelegramMediaGrabberBot.Scrapers;
 
@@ -73,28 +74,35 @@ public class InstagramScraper : ScraperBase
 
                         scraped.Video = video;
                     }
+
                     else if (mediaType.StartsWith("Photo by") ||
                         mediaType.StartsWith("Post by"))
                     {
                         scraped.Type = DataStructures.ScrapedDataType.Photo;
-                        List<string> imageUrls = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").ChildNodes
-                         .Select(x => x.GetAttributeValue("src", null))
+                        var elements = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").ChildNodes
+                         .Select(x => x)
                          .Distinct()
                          .ToList();
 
-                        if (imageUrls.Count > 0 &&
-                            scraped.ImagesUrl != null)
+                        if (elements.Count > 0 &&
+                            scraped.Medias != null)
                         {
-                            foreach (string imgUrl in imageUrls)
+                            foreach (var element in elements)
                             {
-                                if (!imgUrl.StartsWith("http"))
+                                var url = element.GetAttributeValue("src", null);
+                                if (!url.StartsWith("http"))
                                 {
-                                    scraped.ImagesUrl.Add(bibliogramInstance + imgUrl);
+                                    url = bibliogramInstance + url;
                                 }
-                                else
+
+                                ScrapedDataType type = ScrapedDataType.Photo;
+
+                                if (element.Name == "video")
                                 {
-                                    scraped.ImagesUrl.Add(imgUrl);
+                                    type = ScrapedDataType.Video;
                                 }
+                                var media = new Media() { Url = url, Type = type };
+                                scraped.Medias.Add(media);
                             }
                         }
                     }
