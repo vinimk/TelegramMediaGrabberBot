@@ -40,7 +40,7 @@ public class TwitterScraper : ScraperBase
 
                 ScrapedData scraped = new()
                 {
-                    Url = twitterUrl.AbsoluteUri
+                    Uri = twitterUrl
                 };
 
                 string tweetContet = HttpUtility.HtmlDecode(metaNodes.
@@ -72,10 +72,10 @@ public class TwitterScraper : ScraperBase
 
                     case "photo":
                         scraped.Type = DataStructures.ScrapedDataType.Photo;
-                        var imageMedias = metaNodes
+                        List<Media> imageMedias = metaNodes
                          .Where(x => x.GetAttributeValue("property", null) == "og:image" &&
                          !x.GetAttributeValue("content", null).Contains("tw_video_thumb"))
-                         .Select(x => new Media() { Url = x.GetAttributeValue("content", null), Type = ScrapedDataType.Photo })
+                         .Select(x => new Media() { Uri = new Uri(x.GetAttributeValue("content", null), UriKind.Absolute), Type = ScrapedDataType.Photo })
                          .Distinct()
                          .ToList();
                         if (imageMedias.Count > 0)
@@ -106,6 +106,6 @@ public class TwitterScraper : ScraperBase
 
         //as a last effort if everything fails, try direct download from yt-dlp
         Video? video = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri);
-        return video != null ? new ScrapedData { Type = ScrapedDataType.Video, Url = twitterUrl.AbsoluteUri, Video = video } : null;
+        return video != null ? new ScrapedData { Type = ScrapedDataType.Video, Uri = twitterUrl, Video = video } : null;
     }
 }

@@ -16,7 +16,7 @@ public class GenericScraper : ScraperBase
         {
             ScrapedData scraped = new()
             {
-                Url = urlRequest,
+                Uri = new Uri(urlRequest, UriKind.Absolute),
                 Type = ScrapedDataType.Video,
                 Video = video,
                 Content = video.Content,
@@ -26,5 +26,4 @@ public class GenericScraper : ScraperBase
         }
         return null;
     }
-
 }

@@ -96,20 +96,12 @@ public partial class TelegramUpdateHandler : IUpdateHandler
                                 _ = _botClient.SendChatActionAsync(message.Chat, ChatAction.UploadPhoto, cancellationToken: cancellationToken);
 
                                 List<IAlbumInputMedia> albumMedia = new();
-                                foreach (var media in data.Medias)
+                                foreach (ScrapedData.Media media in data.Medias)
                                 {
-                                    if (media.Url != null)
+                                    if (media.Uri != null)
                                     {
-                                        var inputFileUrl = new InputFileUrl(media.Url);
-                                        IAlbumInputMedia inputMedia;
-                                        if (media.Type == ScrapedDataType.Video)
-                                        {
-                                            inputMedia = new InputMediaVideo(inputFileUrl);
-                                        }
-                                        else //photo
-                                        {
-                                            inputMedia = new InputMediaPhoto(inputFileUrl);
-                                        }
+                                        InputFileUrl inputFileUrl = new(media.Uri);
+                                        IAlbumInputMedia inputMedia = media.Type == ScrapedDataType.Video ? new InputMediaVideo(inputFileUrl) : new InputMediaPhoto(inputFileUrl);
 
                                         //workarround for showing the caption below the album, only add it to the first message.
                                         if (media == data.Medias.First())

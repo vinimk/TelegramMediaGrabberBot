@@ -41,7 +41,7 @@ public class InstagramScraper : ScraperBase
 
                     ScrapedData scraped = new()
                     {
-                        Url = instagramUrl.AbsoluteUri
+                        Uri = instagramUrl
                     };
 
                     HtmlNode nodeContent = doc.DocumentNode.SelectSingleNode("//p[@class='structured-text description']");
@@ -79,7 +79,7 @@ public class InstagramScraper : ScraperBase
                         mediaType.StartsWith("Post by"))
                     {
                         scraped.Type = DataStructures.ScrapedDataType.Photo;
-                        var elements = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").ChildNodes
+                        List<HtmlNode> elements = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").ChildNodes
                          .Select(x => x)
                          .Distinct()
                          .ToList();
@@ -87,21 +87,22 @@ public class InstagramScraper : ScraperBase
                         if (elements.Count > 0 &&
                             scraped.Medias != null)
                         {
-                            foreach (var element in elements)
+                            foreach (HtmlNode? element in elements)
                             {
-                                var url = element.GetAttributeValue("src", null);
+                                string url = element.GetAttributeValue("src", null);
                                 if (!url.StartsWith("http"))
                                 {
-                                    url = bibliogramInstance + url;
+                                    url = "http://" + bibliogramInstance + url;
                                 }
 
+                                Uri uri = new(url, UriKind.Absolute);
                                 ScrapedDataType type = ScrapedDataType.Photo;
 
                                 if (element.Name == "video")
                                 {
                                     type = ScrapedDataType.Video;
                                 }
-                                var media = new Media() { Url = url, Type = type };
+                                Media media = new() { Uri = uri, Type = type };
                                 scraped.Medias.Add(media);
                             }
                         }
@@ -117,6 +118,6 @@ public class InstagramScraper : ScraperBase
 
         //as a last effort if everything fails, try direct download from yt-dlp
         Video? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
-        return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Video, Url = instagramUrl.AbsoluteUri, Video = videoObj } : null;
+        return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Video, Uri = instagramUrl, Video = videoObj } : null;
     }
 }
