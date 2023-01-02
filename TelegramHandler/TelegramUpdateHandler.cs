@@ -71,7 +71,7 @@ public partial class TelegramUpdateHandler : IUpdateHandler
             {
                 if (!_supportedWebSites.Any(s => uri.AbsoluteUri.Contains(s, StringComparison.CurrentCultureIgnoreCase)))
                 {
-                    _logger.LogInformation("Ignoring message {Message} because of no valid url", message.Text);
+                    _logger.LogInformation("Ignoring message {Message} for chatName {chatName} because of no valid url", message.Text, message.Chat.Title + message.Chat.Username);
                     return;
                 }
                 else
