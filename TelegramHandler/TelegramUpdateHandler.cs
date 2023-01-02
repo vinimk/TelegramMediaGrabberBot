@@ -101,22 +101,23 @@ public partial class TelegramUpdateHandler : IUpdateHandler
                                     if (media.Url != null)
                                     {
                                         var inputFileUrl = new InputFileUrl(media.Url);
+                                        IAlbumInputMedia inputMedia;
                                         if (media.Type == ScrapedDataType.Video)
                                         {
-                                            albumMedia.Add(new InputMediaVideo(inputFileUrl)
-                                            {
-                                                Caption = data.TelegramFormatedText,
-                                                ParseMode = ParseMode.Html
-                                            });
+                                            inputMedia = new InputMediaVideo(inputFileUrl);
                                         }
-                                        else if (media.Type == ScrapedDataType.Photo)
+                                        else //photo
                                         {
-                                            albumMedia.Add(new InputMediaPhoto(inputFileUrl)
-                                            {
-                                                Caption = data.TelegramFormatedText,
-                                                ParseMode = ParseMode.Html
-                                            });
+                                            inputMedia = new InputMediaPhoto(inputFileUrl);
                                         }
+
+                                        //workarround for showing the caption below the album, only add it to the first message.
+                                        if (media == data.Medias.First())
+                                        {
+                                            ((InputMedia)inputMedia).Caption = data.TelegramFormatedText;
+                                            ((InputMedia)inputMedia).ParseMode = ParseMode.Html;
+                                        }
+                                        albumMedia.Add(inputMedia);
                                     }
                                 }
 
