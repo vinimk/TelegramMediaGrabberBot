@@ -2,7 +2,6 @@
 
 public enum ScrapedDataType
 {
-    Photo,
-    Video,
-    Article
+    Media,
+    Text
 }

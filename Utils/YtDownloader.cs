@@ -1,9 +1,9 @@
 ﻿using CliWrap;
 using CliWrap.Buffered;
 using System.Text;
-using TelegramMediaGrabberBot.DataStructures;
+using TelegramMediaGrabberBot.DataStructures.Medias;
 
-namespace TelegramMediaGrabberBot;
+namespace TelegramMediaGrabberBot.Utils;
 
 public static class YtDownloader
 {
@@ -14,20 +14,22 @@ public static class YtDownloader
         LastUpdateOfYtDlp = new();
     }
 
-    public static async Task<Video?> DownloadVideoFromUrlAsync(string url, bool updatedYtDl = false)
+    public static async Task<MediaDetails?> DownloadVideoFromUrlAsync(string url, bool forceDownload = false, bool updatedYtDl = false)
     {
-        BufferedCommandResult urlResult = await Cli.Wrap("yt-dlp")
-                                .WithArguments(new[] {
+        if (forceDownload == false) //only use the getURL method if ForceDownload is disabled
+        {
+            BufferedCommandResult urlResult = await Cli.Wrap("yt-dlp")
+                                    .WithArguments(new[] {
                                             "--get-url"
                                             , url })
-                                .WithValidation(CommandResultValidation.None)
-                                .ExecuteBufferedAsync();
-        if (urlResult.StandardOutput.Length > 0 &&
-            urlResult.StandardOutput.Split("\n").Length <= 2) //workarround for some providers (youtube shorts for ex) that has different tracks for video/sound
-        {
-            return new Video { contentUri = new Uri(urlResult.StandardOutput.Replace("\n", "")) };
+                                    .WithValidation(CommandResultValidation.None)
+                                    .ExecuteBufferedAsync();
+            if (urlResult.StandardOutput.Length > 0 &&
+                urlResult.StandardOutput.Split("\n").Length <= 2) //workarround for some providers (youtube shorts for ex) that has different tracks for video/sound
+            {
+                return new MediaDetails { Uri = new Uri(urlResult.StandardOutput.Replace("\n", "")), Type = MediaType.Video };
+            }
         }
-
         string fileName = $"tmp/{Guid.NewGuid()}.mp4";
         BufferedCommandResult dlResult = await Cli.Wrap("yt-dlp")
                                 .WithArguments(new[] {
@@ -65,26 +67,28 @@ public static class YtDownloader
                 string? description = tfile.Tag.Description;
                 string? title = tfile.Tag.Title;
                 string? author = tfile.Tag.Performers?.FirstOrDefault();
-                return new Video()
+                return new MediaDetails()
                 {
                     Stream = stream,
-                    Content = title + " " + description,
-                    Author = author
+                    Content = description,
+                    Author = author,
+                    Type = MediaType.Video
                 };
             }
             catch (Exception ex)
             {
                 log.LogError(ex, "metadata extraction");
-                return new Video()
+                return new MediaDetails()
                 {
-                    Stream = stream
+                    Stream = stream,
+                    Type = MediaType.Video
                 };
             }
 
         }
         else
         {
-            if (dlResult.StandardError.Length > 0)
+            if (dlResult.StandardError.Length > 0) // if there is an error try and update yt-dl
             {
                 log.LogError(dlResult.StandardError.ToString());
 
@@ -97,7 +101,7 @@ public static class YtDownloader
 
                     if (!updatedYtDl)
                     {
-                        return await DownloadVideoFromUrlAsync(url, true);
+                        return await DownloadVideoFromUrlAsync(url, forceDownload, true);
                     }
                 }
             }

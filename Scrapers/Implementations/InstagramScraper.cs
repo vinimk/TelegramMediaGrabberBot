@@ -1,9 +1,11 @@
 ﻿using HtmlAgilityPack;
+using System.Collections.Specialized;
 using System.Web;
 using TelegramMediaGrabberBot.DataStructures;
-using static TelegramMediaGrabberBot.DataStructures.ScrapedData;
+using TelegramMediaGrabberBot.DataStructures.Medias;
+using TelegramMediaGrabberBot.Utils;
 
-namespace TelegramMediaGrabberBot.Scrapers;
+namespace TelegramMediaGrabberBot.Scrapers.Implementations;
 
 public class InstagramScraper : ScraperBase
 {
@@ -16,7 +18,7 @@ public class InstagramScraper : ScraperBase
         _bibliogramInstances = bibliogramInstances;
     }
 
-    public override async Task<ScrapedData?> ExtractContentAsync(Uri instagramUrl)
+    public override async Task<ScrapedData?> ExtractContentAsync(Uri instagramUrl, bool forceDownload = false)
     {
         foreach (string bibliogramInstance in _bibliogramInstances)
         {
@@ -41,7 +43,8 @@ public class InstagramScraper : ScraperBase
 
                     ScrapedData scraped = new()
                     {
-                        Uri = instagramUrl
+                        Uri = instagramUrl,
+                        Type = ScrapedDataType.Media
                     };
 
                     HtmlNode nodeContent = doc.DocumentNode.SelectSingleNode("//p[@class='structured-text description']");
@@ -60,7 +63,6 @@ public class InstagramScraper : ScraperBase
 
                     if (mediaType.StartsWith("Video by"))
                     {
-                        scraped.Type = DataStructures.ScrapedDataType.Video;
                         string videoUrl = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").FirstChild.GetAttributeValue("src", null);
 
                         if (!videoUrl.StartsWith(bibliogramInstance))
@@ -70,15 +72,19 @@ public class InstagramScraper : ScraperBase
 
                         Uri videoUri = new(videoUrl);
 
-                        Video? video = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
-
-                        scraped.Video = video;
+                        MediaDetails? video = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri, forceDownload);
+                        if (video != null)
+                        {
+                            scraped.Medias = new List<Media>()
+                            {
+                                video
+                            };
+                        }
                     }
 
                     else if (mediaType.StartsWith("Photo by") ||
                         mediaType.StartsWith("Post by"))
                     {
-                        scraped.Type = DataStructures.ScrapedDataType.Photo;
                         List<HtmlNode> elements = doc.DocumentNode.SelectSingleNode("//section[@class='images-gallery']").ChildNodes
                          .Select(x => x)
                          .Distinct()
@@ -96,13 +102,31 @@ public class InstagramScraper : ScraperBase
                                 }
 
                                 Uri uri = new(url, UriKind.Absolute);
-                                ScrapedDataType type = ScrapedDataType.Photo;
-
+                                MediaType type = MediaType.Photo;
                                 if (element.Name == "video")
                                 {
-                                    type = ScrapedDataType.Video;
+                                    type = MediaType.Video;
                                 }
-                                Media media = new() { Uri = uri, Type = type };
+
+                                Media media;
+                                if (forceDownload == true)
+                                {
+                                    Stream? stream = null;
+                                    NameValueCollection queryString = HttpUtility.ParseQueryString(uri.Query);
+                                    if (queryString != null)
+                                    {
+                                        string? directInstagramUrl = queryString["url"];
+                                        if (directInstagramUrl != null)
+                                        {
+                                            stream = await HttpUtils.GetStreamFromUrl(new Uri(directInstagramUrl, UriKind.Absolute));
+                                        }
+                                    }
+                                    media = new() { Stream = stream, Type = type };
+                                }
+                                else
+                                {
+                                    media = new() { Uri = uri, Type = type };
+                                }
                                 scraped.Medias.Add(media);
                             }
                         }
@@ -117,7 +141,7 @@ public class InstagramScraper : ScraperBase
         }
 
         //as a last effort if everything fails, try direct download from yt-dlp
-        Video? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
-        return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Video, Uri = instagramUrl, Video = videoObj } : null;
+        MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri, forceDownload);
+        return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = instagramUrl, Medias = new List<Media>() { videoObj } } : null;
     }
 }

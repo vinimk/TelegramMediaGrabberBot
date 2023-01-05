@@ -38,4 +38,9 @@ public static class HttpUtils
 
         return redirectedUrl;
     }
+    public static async Task<Stream?> GetStreamFromUrl(Uri uri)
+    {
+        HttpClient httpClient = new();
+        return await httpClient.GetStreamAsync(uri);
+    }
 }

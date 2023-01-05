@@ -1,5 +1,6 @@
 ﻿using TelegramMediaGrabberBot.Config;
 using TelegramMediaGrabberBot.DataStructures;
+using TelegramMediaGrabberBot.Scrapers.Implementations;
 
 namespace TelegramMediaGrabberBot.Scrapers;
 
@@ -17,12 +18,12 @@ public class Scraper
         _genericScraper = new GenericScraper(httpClientFactory);
     }
 
-    public async Task<ScrapedData?> GetScrapedDataFromUrlAsync(Uri uri)
+    public async Task<ScrapedData?> GetScrapedDataFromUrlAsync(Uri uri, bool forceDownload = false)
     {
         return uri.AbsoluteUri.Contains("twitter.com")
-            ? await _twitterScraper.ExtractContentAsync(uri)
+            ? await _twitterScraper.ExtractContentAsync(uri, forceDownload)
             : uri.AbsoluteUri.Contains("instagram.com")
-            ? await _instagramScraper.ExtractContentAsync(uri)
-            : await _genericScraper.ExtractContentAsync(uri);
+            ? await _instagramScraper.ExtractContentAsync(uri, forceDownload)
+            : await _genericScraper.ExtractContentAsync(uri, forceDownload);
     }
 }

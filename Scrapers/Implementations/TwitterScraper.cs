@@ -1,9 +1,10 @@
 ﻿using HtmlAgilityPack;
 using System.Web;
 using TelegramMediaGrabberBot.DataStructures;
-using static TelegramMediaGrabberBot.DataStructures.ScrapedData;
+using TelegramMediaGrabberBot.DataStructures.Medias;
+using TelegramMediaGrabberBot.Utils;
 
-namespace TelegramMediaGrabberBot.Scrapers;
+namespace TelegramMediaGrabberBot.Scrapers.Implementations;
 
 public class TwitterScraper : ScraperBase
 {
@@ -16,7 +17,7 @@ public class TwitterScraper : ScraperBase
         _nitterInstances = nitterInstances;
     }
 
-    public override async Task<ScrapedData?> ExtractContentAsync(Uri twitterUrl)
+    public override async Task<ScrapedData?> ExtractContentAsync(Uri twitterUrl, bool forceDownload = false)
     {
 
         foreach (string nitterInstance in _nitterInstances)
@@ -65,32 +66,55 @@ public class TwitterScraper : ScraperBase
                 switch (tweetType)
                 {
                     case "video":
-                        scraped.Type = DataStructures.ScrapedDataType.Video;
-                        Video? videoStream = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri);
-                        scraped.Video = videoStream;
+                        scraped.Type = ScrapedDataType.Media;
+                        Media? media = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri, forceDownload);
+                        if (media != null)
+                        {
+                            scraped.Medias = new List<Media>() { media };
+                        }
                         break;
 
                     case "photo":
-                        scraped.Type = DataStructures.ScrapedDataType.Photo;
-                        List<Media> imageMedias = metaNodes
+                        scraped.Type = ScrapedDataType.Media;
+                        List<Uri> uriMedias = metaNodes
                          .Where(x => x.GetAttributeValue("property", null) == "og:image" &&
                          !x.GetAttributeValue("content", null).Contains("tw_video_thumb"))
-                         .Select(x => new Media() { Uri = new Uri(x.GetAttributeValue("content", null), UriKind.Absolute), Type = ScrapedDataType.Photo })
+                         .Select(x => x.GetAttributeValue("content", null))
                          .Distinct()
+                         .Select(x => new Uri(x, UriKind.Absolute))
                          .ToList();
-                        if (imageMedias.Count > 0)
+
+                        if (uriMedias.Count > 0)
                         {
-                            scraped.Medias = imageMedias;
+                            if (forceDownload)
+                            {
+                                scraped.Medias = new();
+                                foreach (Uri? uri in uriMedias)
+                                {
+                                    Stream? stream = await HttpUtils.GetStreamFromUrl(uri);
+                                    if (stream != null)
+                                    {
+                                        Media imageMedia = new() { Stream = stream, Type = MediaType.Photo };
+                                        scraped.Medias.Add(imageMedia);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                scraped.Medias = uriMedias
+                                    .Select(x => new Media { Uri = x, Type = MediaType.Photo })
+                                    .ToList();
+                            }
                         }
                         break;
                     case "article":
-                        scraped.Type = DataStructures.ScrapedDataType.Article;
+                        scraped.Type = ScrapedDataType.Text;
                         break;
                     default:
                         break;
                 }
 
-                if (scraped.Type == ScrapedDataType.Article && string.IsNullOrWhiteSpace(scraped.Content))
+                if (scraped.Type == ScrapedDataType.Text && string.IsNullOrWhiteSpace(scraped.Content))
                 {
                     //if the content is empty and the type is an article, the tweet was not scrapped right so we ignore it
                     continue;
@@ -105,7 +129,7 @@ public class TwitterScraper : ScraperBase
         }
 
         //as a last effort if everything fails, try direct download from yt-dlp
-        Video? video = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri);
-        return video != null ? new ScrapedData { Type = ScrapedDataType.Video, Uri = twitterUrl, Video = video } : null;
+        Media? video = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri, forceDownload);
+        return video != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = twitterUrl, Medias = new List<Media>() { video } } : null;
     }
 }

@@ -1,22 +1,16 @@
 ﻿using System.Text;
 using System.Web;
+using TelegramMediaGrabberBot.DataStructures.Medias;
 
 namespace TelegramMediaGrabberBot.DataStructures;
 
 public class ScrapedData : IDisposable
 {
-    public class Media
-    {
-        public Uri? Uri { get; set; }
-        public ScrapedDataType Type { get; set; }
-    }
-
     public string? Content { get; set; }
     public List<Media>? Medias { get; set; }
     public string? Author { get; set; }
     public Uri? Uri { get; set; }
     public ScrapedDataType? Type { get; set; }
-    public Video? Video { get; set; }
     public ScrapedData()
     {
         Medias = new();
@@ -40,14 +34,9 @@ public class ScrapedData : IDisposable
                 _ = sb.Append($"<a href='{Uri?.AbsoluteUri.Trim()}'><i>Link</i></a>");
             }
 
-            return sb.Length > 1024 &&
-                (Type == ScrapedDataType.Video ||
-                Type == ScrapedDataType.Photo)
-                ? sb.ToString()[..1023]
-                : sb.Length > 2048 &&
-                                Type == ScrapedDataType.Article
-                    ? sb.ToString()[..2047]
-                    : sb.ToString();
+            return sb.Length > 1024 ?
+                sb.ToString()[..1023]
+                : sb.ToString();
         }
     }
 

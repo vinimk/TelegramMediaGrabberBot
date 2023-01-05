@@ -1,8 +1,8 @@
 ﻿using TelegramMediaGrabberBot.DataStructures;
 
-namespace TelegramMediaGrabberBot.Scrapers
+namespace TelegramMediaGrabberBot.Scrapers.Implementations
 {
-    public class ScraperBase
+    public abstract class ScraperBase
     {
         protected readonly IHttpClientFactory _httpClientFactory;
         protected readonly ILogger _logger;
@@ -12,7 +12,7 @@ namespace TelegramMediaGrabberBot.Scrapers
             _logger = ApplicationLogging.CreateLogger(GetType().Name);
         }
 
-        public virtual async Task<ScrapedData?> ExtractContentAsync(Uri uri)
+        public virtual async Task<ScrapedData?> ExtractContentAsync(Uri uri, bool forceDownload = false)
         {
             await Task.Delay(0);
             return new ScrapedData();
