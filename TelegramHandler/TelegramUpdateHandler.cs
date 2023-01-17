@@ -77,11 +77,14 @@ public partial class TelegramUpdateHandler : IUpdateHandler
                 return;
             }
 
-            var action = messageText.Split(' ')[0] switch
+            if (messageText.Contains("@"))
             {
-                "/acende" => SendRojao(_botClient, message, cancellationToken),
-                _ => Task.CompletedTask
-            };
+                var action = messageText.Split('@')[0] switch
+                {
+                    "/acende" => SendRojao(_botClient, message, cancellationToken),
+                    _ => Task.CompletedTask
+                };
+            }
 
             if (_whitelistedGroups != null &&
                 _whitelistedGroups.Any() &&
@@ -120,14 +123,14 @@ public partial class TelegramUpdateHandler : IUpdateHandler
 
     private async Task SendRojao(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
     {
-        _ = await _botClient.SendTextMessageAsync(message.Chat, "pra pra" , cancellationToken: cancellationToken);
-        await Task.Delay(300);
-        _ = await _botClient.SendTextMessageAsync(message.Chat, "pra" , cancellationToken: cancellationToken);
-        await Task.Delay(300);
+        _ = await _botClient.SendTextMessageAsync(message.Chat, "pra pra", cancellationToken: cancellationToken);
+        await Task.Delay(200);
         _ = await _botClient.SendTextMessageAsync(message.Chat, "pra", cancellationToken: cancellationToken);
-        await Task.Delay(300);
+        await Task.Delay(100);
+        _ = await _botClient.SendTextMessageAsync(message.Chat, "pra", cancellationToken: cancellationToken);
+        await Task.Delay(100);
         _ = await _botClient.SendTextMessageAsync(message.Chat, "pra pra pra pra pra", cancellationToken: cancellationToken);
-        await Task.Delay(300);
+        await Task.Delay(400);
         _ = await _botClient.SendTextMessageAsync(message.Chat, "POOOOOWW", cancellationToken: cancellationToken);
     }
 }
