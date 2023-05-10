@@ -9,6 +9,8 @@ public static class YtDownloader
 {
     private static DateTime LastUpdateOfYtDlp;
     private static readonly ILogger log = ApplicationLogging.CreateLogger("YtDownloader");
+    //private static string InstagramUserName = "";
+    //private static string InstagramPassword = "";
     static YtDownloader()
     {
         LastUpdateOfYtDlp = new();
@@ -19,10 +21,13 @@ public static class YtDownloader
         if (forceDownload == false) //only use the getURL method if ForceDownload is disabled
         {
             BufferedCommandResult urlResult = await Cli.Wrap("yt-dlp")
-                                    .WithArguments(new[] {
-                                            "--get-url"
-                                            , url })
-                                    .WithValidation(CommandResultValidation.None)
+                                    .WithArguments(new[]
+                                        {
+                                            "--get-url", url
+                                            //,"--username", InstagramUserName
+                                            //, "--password", InstagramPassword
+                                        }
+                                    ).WithValidation(CommandResultValidation.None)
                                     .ExecuteBufferedAsync();
             if (urlResult.StandardOutput.Length > 0 &&
                 urlResult.StandardOutput.Split("\n").Length <= 2) //workarround for some providers (youtube shorts for ex) that has different tracks for video/sound
@@ -32,20 +37,23 @@ public static class YtDownloader
         }
         string fileName = $"tmp/{Guid.NewGuid()}.mp4";
         BufferedCommandResult dlResult = await Cli.Wrap("yt-dlp")
-                                .WithArguments(new[] {
-                                            //"-vU"
-                                            "-o", fileName
-                                            ,"--add-header"
-                                            ,"User-Agent:facebookexternalhit/1.1"
-                                            ,"--embed-metadata"
-                                            ,"--exec" ,"echo"
-                                            , url })
-                                .WithValidation(CommandResultValidation.None)
+                                .WithArguments(new[]
+                                {
+                                    //"-vU"
+                                    "-o", fileName
+                                    ,"--add-header","User-Agent:facebookexternalhit/1.1"
+                                    ,"--embed-metadata"
+                                    ,"--exec" ,"echo"
+                                    //,"--username", InstagramUserName
+                                    //, "--password", InstagramPassword
+                                    , url
+                                }
+                                ).WithValidation(CommandResultValidation.None)
                                 .ExecuteBufferedAsync();
 
         if (dlResult.StandardOutput.Length > 0) //workarround for some providers (ie tiktok that return weird separated filenames)
         {
-            log.LogInformation(dlResult.StandardOutput);
+            log.LogInformation("Info: {buffer}", dlResult.StandardOutput);
 
             string[] output = dlResult.StandardOutput.Split(Environment.NewLine);
 
@@ -90,7 +98,7 @@ public static class YtDownloader
         {
             if (dlResult.StandardError.Length > 0) // if there is an error try and update yt-dl
             {
-                log.LogError(dlResult.StandardError.ToString());
+                log.LogError("Error downloading: {buffer}", dlResult.StandardError.ToString());
 
                 if (DateTime.Compare(LastUpdateOfYtDlp, DateTime.Now.AddDays(-1)) < 0) //update only once a day
                 {
@@ -124,6 +132,6 @@ public static class YtDownloader
         .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBufferUpdate))
         .ExecuteBufferedAsync();
 
-        log.LogInformation(stdOutBufferUpdate.ToString());
+        log.LogInformation("Info: {buffer}", stdOutBufferUpdate.ToString());
     }
 }

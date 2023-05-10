@@ -77,9 +77,9 @@ public partial class TelegramUpdateHandler : IUpdateHandler
                 return;
             }
 
-            if (messageText.Contains("@"))
+            if (messageText.Contains('@'))
             {
-                var action = messageText.Split('@')[0] switch
+                Task action = messageText.Split('@')[0] switch
                 {
                     "/acende" => SendRojao(_botClient, message, cancellationToken),
                     _ => Task.CompletedTask
@@ -121,16 +121,16 @@ public partial class TelegramUpdateHandler : IUpdateHandler
         }
     }
 
-    private async Task SendRojao(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+    private static async Task SendRojao(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
     {
-        _ = await _botClient.SendTextMessageAsync(message.Chat, "pra pra", cancellationToken: cancellationToken);
-        await Task.Delay(200);
-        _ = await _botClient.SendTextMessageAsync(message.Chat, "pra", cancellationToken: cancellationToken);
-        await Task.Delay(100);
-        _ = await _botClient.SendTextMessageAsync(message.Chat, "pra", cancellationToken: cancellationToken);
-        await Task.Delay(100);
-        _ = await _botClient.SendTextMessageAsync(message.Chat, "pra pra pra pra pra", cancellationToken: cancellationToken);
-        await Task.Delay(400);
-        _ = await _botClient.SendTextMessageAsync(message.Chat, "POOOOOWW", cancellationToken: cancellationToken);
+        _ = await botClient.SendTextMessageAsync(message.Chat, "pra pra", cancellationToken: cancellationToken);
+        await Task.Delay(200, cancellationToken);
+        _ = await botClient.SendTextMessageAsync(message.Chat, "pra", cancellationToken: cancellationToken);
+        await Task.Delay(100, cancellationToken);
+        _ = await botClient.SendTextMessageAsync(message.Chat, "pra", cancellationToken: cancellationToken);
+        await Task.Delay(100, cancellationToken);
+        _ = await botClient.SendTextMessageAsync(message.Chat, "pra pra pra pra pra", cancellationToken: cancellationToken);
+        await Task.Delay(400, cancellationToken);
+        _ = await botClient.SendTextMessageAsync(message.Chat, "POOOOOWW", cancellationToken: cancellationToken);
     }
 }
