@@ -1,4 +1,5 @@
-﻿using TelegramMediaGrabberBot.Config;
+﻿using CommunityToolkit.Diagnostics;
+using TelegramMediaGrabberBot.Config;
 using TelegramMediaGrabberBot.DataStructures;
 using TelegramMediaGrabberBot.Scrapers.Implementations;
 
@@ -11,8 +12,9 @@ public class Scraper
     private readonly GenericScraper _genericScraper;
     public Scraper(IHttpClientFactory httpClientFactory, AppSettings appSettings)
     {
-        ArgumentNullException.ThrowIfNull(appSettings.NitterInstances);
-        ArgumentNullException.ThrowIfNull(appSettings.BibliogramInstances);
+        Guard.IsNotNull(appSettings);
+        Guard.IsNotNull(appSettings.NitterInstances);
+        Guard.IsNotNull(appSettings.BibliogramInstances);
         _instagramScraper = new InstagramScraper(httpClientFactory, appSettings.BibliogramInstances);
         _twitterScraper = new TwitterScraper(httpClientFactory, appSettings.NitterInstances);
         _genericScraper = new GenericScraper(httpClientFactory);

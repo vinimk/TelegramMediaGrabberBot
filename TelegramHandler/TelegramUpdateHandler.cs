@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using CommunityToolkit.Diagnostics;
+using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -24,7 +25,8 @@ public partial class TelegramUpdateHandler : IUpdateHandler
     #region Construtors and handlers
     public TelegramUpdateHandler(ITelegramBotClient botClient, ILogger<TelegramUpdateHandler> logger, AppSettings appSettings, IHttpClientFactory httpClientFactory)
     {
-        ArgumentNullException.ThrowIfNull(appSettings.SupportedWebSites);
+        Guard.IsNotNull(appSettings);
+        Guard.IsNotNull(appSettings.SupportedWebSites);
         _botClient = botClient;
         _logger = logger;
         _httpClientFactory = httpClientFactory;

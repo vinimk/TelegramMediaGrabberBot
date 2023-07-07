@@ -1,4 +1,5 @@
-﻿using HtmlAgilityPack;
+﻿using CommunityToolkit.Diagnostics;
+using HtmlAgilityPack;
 using System.Web;
 using TelegramMediaGrabberBot.DataStructures;
 using TelegramMediaGrabberBot.DataStructures.Medias;
@@ -13,7 +14,7 @@ public class TwitterScraper : ScraperBase
     public TwitterScraper(IHttpClientFactory httpClientFactory, List<string> nitterInstances)
     : base(httpClientFactory)
     {
-        ArgumentNullException.ThrowIfNull(nitterInstances);
+        Guard.IsNotNull(nitterInstances);
         _nitterInstances = nitterInstances;
     }
 

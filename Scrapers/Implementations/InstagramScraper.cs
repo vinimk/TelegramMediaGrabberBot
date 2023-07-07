@@ -1,4 +1,5 @@
-﻿using HtmlAgilityPack;
+﻿using CommunityToolkit.Diagnostics;
+using HtmlAgilityPack;
 using System.Collections.Specialized;
 using System.Web;
 using TelegramMediaGrabberBot.DataStructures;
@@ -14,7 +15,7 @@ public class InstagramScraper : ScraperBase
     public InstagramScraper(IHttpClientFactory httpClientFactory, List<string> bibliogramInstances)
         : base(httpClientFactory)
     {
-        ArgumentNullException.ThrowIfNull(bibliogramInstances);
+        Guard.IsNotNull(bibliogramInstances);
         _bibliogramInstances = bibliogramInstances;
     }
 

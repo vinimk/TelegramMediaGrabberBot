@@ -1,4 +1,5 @@
-﻿using TelegramMediaGrabberBot.Config;
+﻿using CommunityToolkit.Diagnostics;
+using TelegramMediaGrabberBot.Config;
 using TelegramMediaGrabberBot.Utils;
 
 namespace TelegramMediaGrabberBot.TelegramHandler.Abstract;
@@ -17,10 +18,10 @@ public abstract class PollingServiceBase<TReceiverService> : BackgroundService
 
     public PollingServiceBase(ILogger<PollingServiceBase<TReceiverService>> logger, ILoggerFactory loggerFactory, IServiceProvider serviceProvider, AppSettings appSettings)
     {
-        ArgumentNullException.ThrowIfNull(appSettings);
-        ArgumentNullException.ThrowIfNull(appSettings.NitterInstances);
-        ArgumentNullException.ThrowIfNull(appSettings.BibliogramInstances);
-        ArgumentNullException.ThrowIfNull(appSettings.SupportedWebSites);
+        Guard.IsNotNull(appSettings);
+        Guard.IsNotNull(appSettings.NitterInstances);
+        Guard.IsNotNull(appSettings.BibliogramInstances);
+        Guard.IsNotNull(appSettings.SupportedWebSites);
         _serviceProvider = serviceProvider;
         _logger = logger;
 
