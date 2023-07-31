@@ -95,7 +95,7 @@ public class TwitterScraper : ScraperBase
                                     Stream? stream = await HttpUtils.GetStreamFromUrl(uri);
                                     if (stream != null)
                                     {
-                                        Media imageMedia = new() { Stream = stream, Type = MediaType.Photo };
+                                        Media imageMedia = new() { Stream = stream, Type = MediaType.Image };
                                         scraped.Medias.Add(imageMedia);
                                     }
                                 }
@@ -103,7 +103,7 @@ public class TwitterScraper : ScraperBase
                             else
                             {
                                 scraped.Medias = uriMedias
-                                    .Select(x => new Media { Uri = x, Type = MediaType.Photo })
+                                    .Select(x => new Media { Uri = x, Type = MediaType.Image })
                                     .ToList();
                             }
                         }

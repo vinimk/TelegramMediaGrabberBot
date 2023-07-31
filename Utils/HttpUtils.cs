@@ -24,7 +24,10 @@ public static class HttpUtils
             using HttpContent content = response.Content;
             // ... Read the response to see if we have the redirected url
             if (response.StatusCode is System.Net.HttpStatusCode.Found or
-                System.Net.HttpStatusCode.Moved)
+                System.Net.HttpStatusCode.Moved or
+                System.Net.HttpStatusCode.RedirectKeepVerb or
+                System.Net.HttpStatusCode.PermanentRedirect
+                )
             {
                 HttpResponseHeaders headers = response.Headers;
                 if (headers != null && headers.Location != null)

@@ -7,7 +7,7 @@ namespace TelegramMediaGrabberBot.DataStructures;
 public class ScrapedData : IDisposable
 {
     public string? Content { get; set; }
-    public List<Media>? Medias { get; set; }
+    public List<Media> Medias { get; set; }
     public string? Author { get; set; }
     public Uri? Uri { get; set; }
     public ScrapedDataType? Type { get; set; }

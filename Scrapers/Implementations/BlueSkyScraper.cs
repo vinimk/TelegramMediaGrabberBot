@@ -1,5 +1,4 @@
-﻿using CommunityToolkit.Diagnostics;
-using HtmlAgilityPack;
+﻿using HtmlAgilityPack;
 using System.Web;
 using TelegramMediaGrabberBot.DataStructures;
 using TelegramMediaGrabberBot.DataStructures.Medias;
@@ -80,7 +79,7 @@ public class BlueSkyScraper : ScraperBase
                                 Stream? stream = await HttpUtils.GetStreamFromUrl(uri);
                                 if (stream != null)
                                 {
-                                    Media imageMedia = new() { Stream = stream, Type = MediaType.Photo };
+                                    Media imageMedia = new() { Stream = stream, Type = MediaType.Image };
                                     scraped.Medias.Add(imageMedia);
                                 }
                             }
@@ -88,7 +87,7 @@ public class BlueSkyScraper : ScraperBase
                         else
                         {
                             scraped.Medias = uriMedias
-                                .Select(x => new Media { Uri = x, Type = MediaType.Photo })
+                                .Select(x => new Media { Uri = x, Type = MediaType.Image })
                                 .ToList();
                         }
                     }
