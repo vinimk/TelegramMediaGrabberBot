@@ -6,12 +6,8 @@ using TelegramMediaGrabberBot.Utils;
 
 namespace TelegramMediaGrabberBot.Scrapers.Implementations;
 
-public class BlueSkyScraper : ScraperBase
+public class BlueSkyScraper(IHttpClientFactory httpClientFactory) : ScraperBase(httpClientFactory)
 {
-    public BlueSkyScraper(IHttpClientFactory httpClientFactory)
-    : base(httpClientFactory)
-    { }
-
     public override async Task<ScrapedData?> ExtractContentAsync(Uri postUrl, bool forceDownload = false)
     {
         try

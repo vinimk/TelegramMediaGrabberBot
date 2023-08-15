@@ -1,5 +1,6 @@
 using Telegram.Bot;
 using TelegramMediaGrabberBot.Config;
+using TelegramMediaGrabberBot.Services;
 using TelegramMediaGrabberBot.TelegramHandler;
 
 
@@ -26,6 +27,9 @@ IHost host = Host.CreateDefaultBuilder(args)
         List<string>? supportedWebSites = hostContext.Configuration.GetSection("SupportedWebSites").Get<List<string>>();
         logger.LogInformation("supportedWebSites {supportedWebSites}", supportedWebSites);
 
+        int? hoursBetweenBackgroundTask = hostContext.Configuration.GetValue<int?>("HoursBetweenBackgroundTask");
+        logger.LogInformation("HoursBetweenBackgroundTask {hoursBetweenBackgroundTask}", hoursBetweenBackgroundTask);
+
 
         AppSettings appSettings = new()
         {
@@ -33,11 +37,13 @@ IHost host = Host.CreateDefaultBuilder(args)
             WhitelistedGroups = whiteListedGroups,
             NitterInstances = nitterInstances,
             BibliogramInstances = bibliogramInstances,
-            SupportedWebSites = supportedWebSites
+            SupportedWebSites = supportedWebSites,
+            HoursBetweenBackgroundTask = hoursBetweenBackgroundTask,
         };
 
         _ = services.AddSingleton<AppSettings>(appSettings);
 
+        _ = services.AddHostedService<ClearTempBackgroundService>();
 
         _ = services.AddHttpClient("telegram_bot_client")
                 .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>

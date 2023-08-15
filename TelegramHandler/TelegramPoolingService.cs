@@ -4,10 +4,6 @@ using TelegramMediaGrabberBot.TelegramHandler.Abstract;
 namespace TelegramMediaGrabberBot.TelegramHandler;
 
 // Compose Polling and ReceiverService implementations
-public class TelegramPollingService : PollingServiceBase<TelegramReceiverService>
+public class TelegramPollingService(ILogger<TelegramPollingService> logger, ILoggerFactory loggerFactory, IServiceProvider serviceProvider, AppSettings appSettings) : PollingServiceBase<TelegramReceiverService>(logger, loggerFactory, serviceProvider, appSettings)
 {
-    public TelegramPollingService(ILogger<TelegramPollingService> logger, ILoggerFactory loggerFactory, IServiceProvider serviceProvider, AppSettings appSettings)
-    : base(logger, loggerFactory, serviceProvider, appSettings)
-    {
-    }
 }

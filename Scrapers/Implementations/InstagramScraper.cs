@@ -98,8 +98,7 @@ public class InstagramScraper : ScraperBase
                 }
 
 
-                HtmlNode? videoNode = metaNodes.
-                    Where(x => x.GetAttributeValue("property", null) == "og:video")
+                HtmlNode? videoNode = metaNodes.Where(x => x.GetAttributeValue("property", null) == "og:video")
                     .FirstOrDefault();
 
                 if (videoNode != null)
@@ -110,20 +109,22 @@ public class InstagramScraper : ScraperBase
                     videoUrl = $"https://{host}{videoUrl}";
                     scraped.Medias.Add(new Media { Type = MediaType.Video, Uri = new Uri(videoUrl) });
                 }
-
-
-                HtmlNode? imageNode = metaNodes.
-                    Where(x => x.GetAttributeValue("property", null) == "og:image")
-                    .FirstOrDefault();
-
-                if (imageNode != null)
+                else
                 {
-                    string imageUrl = imageNode.GetAttributeValue("content", "");
-                    scraped.Type = ScrapedDataType.Media;
+                    HtmlNode? imageNode = metaNodes.
+                        Where(x => x.GetAttributeValue("property", null) == "og:image")
+                        .FirstOrDefault();
 
-                    imageUrl = $"https://{host}{imageUrl}";
-                    scraped.Medias.Add(new Media { Type = MediaType.Image, Uri = new Uri(imageUrl) });
+                    if (imageNode != null)
+                    {
+                        string imageUrl = imageNode.GetAttributeValue("content", "");
+                        scraped.Type = ScrapedDataType.Media;
+
+                        imageUrl = $"https://{host}{imageUrl}";
+                        scraped.Medias.Add(new Media { Type = MediaType.Image, Uri = new Uri(imageUrl) });
+                    }
                 }
+
 
                 return scraped;
             }

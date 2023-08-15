@@ -9,7 +9,7 @@ public class Scraper
 {
     private readonly InstagramScraper _instagramScraper;
     private readonly TwitterScraper _twitterScraper;
-    private readonly BlueSkyScraper _blueSkyScraper;
+    //private readonly BlueSkyScraper _blueSkyScraper;
     private readonly GenericScraper _genericScraper;
     public Scraper(IHttpClientFactory httpClientFactory, AppSettings appSettings)
     {
@@ -18,7 +18,7 @@ public class Scraper
         Guard.IsNotNull(appSettings.BibliogramInstances);
         _instagramScraper = new InstagramScraper(httpClientFactory, appSettings.BibliogramInstances);
         _twitterScraper = new TwitterScraper(httpClientFactory, appSettings.NitterInstances);
-        _blueSkyScraper = new BlueSkyScraper(httpClientFactory);
+        //_blueSkyScraper = new BlueSkyScraper(httpClientFactory);
         _genericScraper = new GenericScraper(httpClientFactory);
     }
 
