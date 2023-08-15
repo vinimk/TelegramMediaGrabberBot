@@ -26,6 +26,8 @@ public class Scraper
     {
         return uri.AbsoluteUri.Contains("twitter.com")
             ? await _twitterScraper.ExtractContentAsync(uri, forceDownload)
+            : uri.AbsoluteUri.Contains("x.com")
+            ? await _twitterScraper.ExtractContentAsync(uri, forceDownload)
             : uri.AbsoluteUri.Contains("instagram.com")
             ? await _instagramScraper.ExtractContentAsync(uri, forceDownload)
             //: uri.AbsoluteUri.Contains("bsky.app")

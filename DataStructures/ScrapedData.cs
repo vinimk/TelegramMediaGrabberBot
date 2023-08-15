@@ -45,4 +45,3 @@ public class ScrapedData : IDisposable
         GC.SuppressFinalize(this);
     }
 }
-

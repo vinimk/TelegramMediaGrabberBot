@@ -6,4 +6,3 @@ public class Media
     public Uri? Uri { get; set; }
     public MediaType? Type { get; set; }
 }
-

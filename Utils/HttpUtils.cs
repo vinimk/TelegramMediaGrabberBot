@@ -18,8 +18,7 @@ public static class HttpUtils
 
             using HttpClient client = new(handler);
             client.Timeout = new TimeSpan(0, 0, 5);
-            ProductInfoHeaderValue userAgent = new("facebookexternalhit", "1.1");
-            client.DefaultRequestHeaders.UserAgent.Add(userAgent);
+            _ = client.DefaultRequestHeaders.UserAgent.TryParseAdd("curl");
             using HttpResponseMessage response = await client.GetAsync(url);
             using HttpContent content = response.Content;
             // ... Read the response to see if we have the redirected url
