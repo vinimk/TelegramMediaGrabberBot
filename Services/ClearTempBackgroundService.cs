@@ -20,23 +20,31 @@ public class ClearTempBackgroundService : BackgroundService
         while (await _timer.WaitForNextTickAsync(stoppingToken)
             && !stoppingToken.IsCancellationRequested)
         {
-            DirectoryInfo di = new("tmp");
-            IEnumerable<FileInfo> files = di.EnumerateFiles();
-            _logger.LogInformation("Found {files} to delete", files.Count());
-            foreach (FileInfo file in files)
+            try
             {
-                try
+                DirectoryInfo di = new("tmp");
+                IEnumerable<FileInfo> files = di.EnumerateFiles();
+                _logger.LogInformation("Found {files} to delete", files.Count());
+                foreach (FileInfo file in files)
                 {
-                    if (file.CreationTimeUtc < DateTime.UtcNow.AddMinutes(-5))  //not delete because if it recent could be in use
+                    try
                     {
-                        file.Delete();
-                        _logger.LogInformation("Delted {file}", file.FullName);
+                        if (file.CreationTimeUtc < DateTime.UtcNow.AddMinutes(-5))  //not delete because if it recent could be in use
+                        {
+                            file.Delete();
+                            _logger.LogInformation("Delted {file}", file.FullName);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to delete {file}", file.FullName);
                     }
                 }
-                catch
-                {
-                    _logger.LogError("Failed to delete {file}", file.FullName);
-                }
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed");
             }
         }
     }
