@@ -22,27 +22,18 @@ public class TwitterScraper : ScraperBase
 
     public override async Task<ScrapedData?> ExtractContentAsync(Uri twitterUrl, bool forceDownload = false)
     {
-
-        ScrapedData? scrapedData;
-        scrapedData = await ExtractFromFXTwitter(twitterUrl);
-        if (scrapedData != null)
-        {
-            return scrapedData;
-        }
-        else
+        ScrapedData? scrapedData = await ExtractFromFXTwitter(twitterUrl);
+        if (scrapedData == null || !scrapedData.IsValid())
         {
             scrapedData = await ExtractFromNitter(twitterUrl, forceDownload);
+
+            if (scrapedData == null || !scrapedData.IsValid())
+            {
+                MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri, forceDownload);
+                return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = twitterUrl, Medias = new List<Media>() { videoObj } } : null;
+            }
         }
-        if (scrapedData != null)
-        {
-            return scrapedData;
-        }
-        else
-        {
-            //as a last effort if everything fails, try direct download from yt-dlp
-            MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri, forceDownload);
-            return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = twitterUrl, Medias = new List<Media>() { videoObj } } : null;
-        }
+        return scrapedData;
     }
 
     public async Task<ScrapedData?> ExtractFromFXTwitter(Uri twitterUrl)
@@ -62,9 +53,10 @@ public class TwitterScraper : ScraperBase
         {
             using HttpClient client = _httpClientFactory.CreateClient("default");
             client.DefaultRequestHeaders.UserAgent.ParseAdd("TelegramMediaGrabberBot");
-            client.Timeout = new TimeSpan(0, 0, 5);
+            client.Timeout = new TimeSpan(0, 0, 20);
 
             FxTwitterResponse? response = await client.GetFromJsonAsync<FxTwitterResponse>(newUrl);
+
             if (response != null &&
                 response.Post != null)
             {
@@ -122,7 +114,7 @@ public class TwitterScraper : ScraperBase
     }
 
 
-    public async Task<ScrapedData?> ExtractFromNitter(Uri twitterUrl, bool forceDownload = false)
+    public async Task<ScrapedData?> ExtractFromNitter(Uri twitterUrl, bool forceDownload)
     {
         foreach (string nitterInstance in _nitterInstances)
         {
@@ -136,7 +128,8 @@ public class TwitterScraper : ScraperBase
             try
             {
                 using HttpClient client = _httpClientFactory.CreateClient("default");
-                client.Timeout = new TimeSpan(0, 0, 5);
+                client.Timeout = new TimeSpan(0, 0, 10);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.0");
                 HttpResponseMessage response = await client.GetAsync(newUri.AbsoluteUri);
                 HtmlDocument doc = new();
                 doc.Load(await response.Content.ReadAsStreamAsync());
@@ -231,10 +224,6 @@ public class TwitterScraper : ScraperBase
                 _logger.LogError(ex, "Failed for nitter instance {instance}", newUri.AbsoluteUri);
             }//empty catch, if there is any issue with one nitter instance, it will go to the next one
         }
-
-        //as a last effort if everything fails, try direct download from yt-dlp
-        Media? video = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri, forceDownload);
-        return video != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = twitterUrl, Medias = new List<Media>() { video } } : null;
+        return null;
     }
-
 }

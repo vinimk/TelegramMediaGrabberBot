@@ -27,8 +27,11 @@ public class ClearTempBackgroundService : BackgroundService
             {
                 try
                 {
-                    file.Delete();
-                    _logger.LogInformation("Delted {file}", file.FullName);
+                    if (file.CreationTimeUtc < DateTime.UtcNow.AddMinutes(-5))  //not delete because if it recent could be in use
+                    {
+                        file.Delete();
+                        _logger.LogInformation("Delted {file}", file.FullName);
+                    }
                 }
                 catch
                 {

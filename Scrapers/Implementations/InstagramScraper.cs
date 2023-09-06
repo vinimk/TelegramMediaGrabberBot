@@ -21,26 +21,18 @@ public class InstagramScraper : ScraperBase
 
     public override async Task<ScrapedData?> ExtractContentAsync(Uri instagramUrl, bool forceDownload = false)
     {
-        ScrapedData? scrapedData;
-        scrapedData = await ExtractFromDDInstagram(instagramUrl);
-        if (scrapedData != null)
-        {
-            return scrapedData;
-        }
-        else
+        ScrapedData? scrapedData = await ExtractFromDDInstagram(instagramUrl);
+        if (scrapedData == null || !scrapedData.IsValid())
         {
             scrapedData = await ExtractFromBibliogram(instagramUrl, forceDownload);
+
+            if (scrapedData == null || !scrapedData.IsValid())
+            {
+                MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri, forceDownload);
+                return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = instagramUrl, Medias = new List<Media>() { videoObj } } : null;
+            }
         }
-        if (scrapedData != null)
-        {
-            return scrapedData;
-        }
-        else
-        {
-            //as a last effort if everything fails, try direct download from yt-dlp
-            MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri, forceDownload);
-            return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = instagramUrl, Medias = new List<Media>() { videoObj } } : null;
-        }
+        return scrapedData;
     }
 
 
@@ -63,7 +55,7 @@ public class InstagramScraper : ScraperBase
             using HttpClient client = _httpClientFactory.CreateClient("default");
             client.DefaultRequestHeaders.UserAgent.Clear();
             client.DefaultRequestHeaders.UserAgent.ParseAdd("curl");
-            client.Timeout = new TimeSpan(0, 0, 5);
+            client.Timeout = new TimeSpan(0, 0, 20);
 
 
             HttpResponseMessage response = await client.GetAsync(newUrl);

@@ -40,6 +40,32 @@ public class ScrapedData : IDisposable
         }
     }
 
+    public bool IsValid()
+    {
+        switch (Type)
+        {
+            case ScrapedDataType.Media:
+                if (Medias.Any())
+                {
+                    return true;
+                }
+
+                break;
+
+            case ScrapedDataType.Text:
+                if (!string.IsNullOrWhiteSpace(Content))
+                {
+                    return true;
+                }
+
+                break;
+
+            case null:
+                break;
+        }
+        return false;
+    }
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);
