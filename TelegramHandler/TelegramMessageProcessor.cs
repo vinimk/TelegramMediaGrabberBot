@@ -78,6 +78,7 @@ public static class TelegramMessageProcessor
         {
             if (forceDownload == false)
             {
+                logger.LogError("Failed download", ex);
                 logger.LogInformation("Trying to forceDownload {Message} for chatName {chatName} because of exception", message.Text, message.Chat.Title + message.Chat.Username);
                 await ProcessMesage(scrapper, uri, message, botClient, logger, cancellationToken, true);
             }
