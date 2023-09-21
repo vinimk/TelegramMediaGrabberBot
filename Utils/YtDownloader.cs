@@ -35,6 +35,7 @@ public static class YtDownloader
                 return new MediaDetails { Uri = new Uri(urlResult.StandardOutput.Replace("\n", "")), Type = MediaType.Video };
             }
         }
+
         string fileName = $"tmp/{Guid.NewGuid()}.mp4";
         BufferedCommandResult dlResult = await Cli.Wrap("yt-dlp")
                                 .WithArguments(new[]
@@ -85,7 +86,7 @@ public static class YtDownloader
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "metadata extraction");
+                log.LogError(ex, "metadata extraction for {url}", url);
                 return new MediaDetails()
                 {
                     Stream = stream,

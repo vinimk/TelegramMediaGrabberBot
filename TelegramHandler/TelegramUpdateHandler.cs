@@ -100,13 +100,13 @@ public partial class TelegramUpdateHandler : IUpdateHandler
                 }
             }
 
-            foreach (Uri? uri in from Match match in LinkParser.Matches(message.Text)
+            foreach (Uri? uri in from Match match in LinkParser.Matches(messageText)
                                  let uri = new UriBuilder(match.Value).Uri
                                  select uri)
             {
                 if (!_supportedWebSites.Any(s => uri.AbsoluteUri.Contains(s, StringComparison.CurrentCultureIgnoreCase)))
                 {
-                    _logger.LogInformation("Ignoring message {Message} for chatName {chatName} because of no valid url", message.Text, message.Chat.Title + message.Chat.Username);
+                    _logger.LogInformation("Ignoring message {Message} for chatName {chatName} because of no valid url", messageText, message.Chat.Title + message.Chat.Username);
                     return;
                 }
                 else
@@ -119,7 +119,7 @@ public partial class TelegramUpdateHandler : IUpdateHandler
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception");
+            _logger.LogError(ex, "{message} {chatname}", message.Text, message.Chat.Title + message.Chat.Username);
         }
     }
 

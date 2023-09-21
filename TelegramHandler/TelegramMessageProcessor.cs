@@ -22,8 +22,7 @@ public static class TelegramMessageProcessor
                 switch (data.Type)
                 {
                     case ScrapedDataType.Media:
-                        if (data.Medias != null &&
-                            data.Medias.Any())
+                        if (data.Medias.Any())
                         {
                             List<IAlbumInputMedia> albumMedia = new();
                             foreach (Media media in data.Medias)
@@ -58,10 +57,11 @@ public static class TelegramMessageProcessor
                                 albumMedia.Add(inputMedia);
                             }
 
-                            if (albumMedia.Count > 0)
-                            {
-                                _ = await botClient.SendMediaGroupAsync(chatId: message.Chat, messageThreadId: message.MessageThreadId, media: albumMedia, cancellationToken: cancellationToken);
-                            }
+                            _ = await botClient.SendMediaGroupAsync(chatId: message.Chat, messageThreadId: message.MessageThreadId, media: albumMedia, cancellationToken: cancellationToken);
+                        }
+                        else
+                        {
+                            logger.LogError("No medias found in {URL}", uri.AbsoluteUri);
                         }
                         break;
                     case ScrapedDataType.Text:
@@ -76,17 +76,7 @@ public static class TelegramMessageProcessor
         }
         catch (Exception ex)
         {
-            if (forceDownload == false)
-            {
-                logger.LogError("Failed download", ex);
-                logger.LogInformation("Trying to forceDownload {Message} for chatName {chatName} because of exception", message.Text, message.Chat.Title + message.Chat.Username);
-                await ProcessMesage(scrapper, uri, message, botClient, logger, cancellationToken, true);
-            }
-            else
-            {
-                logger.LogError("ForceDownload also failed for {Message} for chatchanem {chatName}", message.Text, message.Chat.Title + message.Chat.Username);
-                logger.LogError("ProcessMessage", ex);
-            }
+            logger.LogError(ex, "Failed for {Message} for chat {chatName}", message.Text, message.Chat.Title + message.Chat.Username);
         }
     }
 }

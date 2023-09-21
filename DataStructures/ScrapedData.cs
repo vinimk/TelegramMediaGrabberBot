@@ -10,7 +10,7 @@ public class ScrapedData : IDisposable
     public List<Media> Medias { get; set; }
     public string? Author { get; set; }
     public Uri? Uri { get; set; }
-    public ScrapedDataType? Type { get; set; }
+    public ScrapedDataType Type { get; set; }
     public ScrapedData()
     {
         Medias = new();
@@ -58,9 +58,6 @@ public class ScrapedData : IDisposable
                     return true;
                 }
 
-                break;
-
-            case null:
                 break;
         }
         return false;

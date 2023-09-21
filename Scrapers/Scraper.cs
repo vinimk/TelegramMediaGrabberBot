@@ -40,6 +40,14 @@ public class Scraper
         }
         catch (Exception ex)
         {
+            if (forceDownload == false)
+            {
+                try
+                {
+                    _ = await GetScrapedDataFromUrlAsync(uri, true);
+                }
+                catch { }
+            }
             _logger.LogError("scrapper error", ex);
             return null;
         }
