@@ -1,8 +1,18 @@
+using Polly;
+using Polly.Extensions.Http;
+using Polly.Timeout;
 using Telegram.Bot;
 using TelegramMediaGrabberBot.Config;
 using TelegramMediaGrabberBot.Services;
 using TelegramMediaGrabberBot.TelegramHandler;
 
+static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+{
+    return HttpPolicyExtensions
+      .HandleTransientHttpError()
+      .Or<TimeoutRejectedException>()
+      .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(30));
+}
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
@@ -55,14 +65,17 @@ IHost host = Host.CreateDefaultBuilder(args)
                         return new TelegramBotClient(options, httpClient);
                     }
                     throw new NullReferenceException(nameof(telegramBotConfig));
-                });
+                })
+                .AddPolicyHandler(GetRetryPolicy())
+                .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(20));
 
         _ = services.AddHttpClient("default",
                 client =>
                 {
                     client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36 Edg/107.0.1418.35");
                 }
-            );
+            ).AddPolicyHandler(GetRetryPolicy())
+                .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(20)); ;
 
 
         _ = services.AddScoped<TelegramUpdateHandler>();
