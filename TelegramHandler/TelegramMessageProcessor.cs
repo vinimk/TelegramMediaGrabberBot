@@ -19,6 +19,13 @@ public static class TelegramMessageProcessor
 
             if (data != null)
             {
+                int? messageThreadId = null;
+                if (message.MessageThreadId != null &&
+                    message.MessageThreadId > 0)
+                {
+                    messageThreadId = message.MessageThreadId;
+                }
+
                 switch (data.Type)
                 {
                     case ScrapedDataType.Media:
@@ -27,9 +34,11 @@ public static class TelegramMessageProcessor
                             List<IAlbumInputMedia> albumMedia = new();
                             foreach (Media media in data.Medias)
                             {
+
+
                                 ChatAction chatAction = media.Type == MediaType.Video ? ChatAction.UploadVideo : ChatAction.UploadPhoto;
 
-                                await botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: message.MessageThreadId, chatAction: chatAction, cancellationToken: cancellationToken);
+                                await botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: messageThreadId, chatAction: chatAction, cancellationToken: cancellationToken);
 
                                 InputFile inputFile;
                                 if (media.Uri != null)
@@ -57,7 +66,7 @@ public static class TelegramMessageProcessor
                                 albumMedia.Add(inputMedia);
                             }
 
-                            _ = await botClient.SendMediaGroupAsync(chatId: message.Chat, messageThreadId: message.MessageThreadId, media: albumMedia, cancellationToken: cancellationToken);
+                            _ = await botClient.SendMediaGroupAsync(chatId: message.Chat, messageThreadId: messageThreadId, media: albumMedia, cancellationToken: cancellationToken);
                         }
                         else
                         {
@@ -65,7 +74,7 @@ public static class TelegramMessageProcessor
                         }
                         break;
                     case ScrapedDataType.Text:
-                        _ = await botClient.SendTextMessageAsync(chatId: message.Chat, messageThreadId: message.MessageThreadId, text: data.TelegramFormatedText, parseMode: ParseMode.Html, cancellationToken: cancellationToken);
+                        _ = await botClient.SendTextMessageAsync(chatId: message.Chat, messageThreadId: messageThreadId, text: data.TelegramFormatedText, parseMode: ParseMode.Html, cancellationToken: cancellationToken);
                         break;
                 }
             }
@@ -76,7 +85,7 @@ public static class TelegramMessageProcessor
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed for {Message} for chat {chatName}", message.Text, message.Chat.Title + message.Chat.Username);
+            logger.LogError(ex, "Failed for {Message} for chat {chatName}, {threadId}", message.Text, message.Chat.Title + message.Chat.Username,message.MessageThreadId);
         }
     }
 }
