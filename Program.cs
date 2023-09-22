@@ -11,7 +11,7 @@ static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
     return HttpPolicyExtensions
       .HandleTransientHttpError()
       .Or<TimeoutRejectedException>()
-      .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(30));
+      .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(5));
 }
 
 IHost host = Host.CreateDefaultBuilder(args)
