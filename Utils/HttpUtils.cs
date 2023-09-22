@@ -17,7 +17,6 @@ public static class HttpUtils
             };
 
             using HttpClient client = new(handler);
-            client.Timeout = new TimeSpan(0, 0, 5);
             _ = client.DefaultRequestHeaders.UserAgent.TryParseAdd("curl");
             using HttpResponseMessage response = await client.GetAsync(url);
             using HttpContent content = response.Content;

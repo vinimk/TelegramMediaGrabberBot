@@ -53,7 +53,6 @@ public class TwitterScraper : ScraperBase
         {
             using HttpClient client = _httpClientFactory.CreateClient("default");
             client.DefaultRequestHeaders.UserAgent.ParseAdd("TelegramMediaGrabberBot");
-            client.Timeout = new TimeSpan(0, 0, 20);
 
             FxTwitterResponse? response = await client.GetFromJsonAsync<FxTwitterResponse>(newUrl);
 
@@ -128,7 +127,6 @@ public class TwitterScraper : ScraperBase
             try
             {
                 using HttpClient client = _httpClientFactory.CreateClient("default");
-                client.Timeout = new TimeSpan(0, 0, 10);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.0");
                 HttpResponseMessage response = await client.GetAsync(newUri.AbsoluteUri);
                 HtmlDocument doc = new();

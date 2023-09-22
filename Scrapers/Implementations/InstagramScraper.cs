@@ -55,7 +55,6 @@ public class InstagramScraper : ScraperBase
             using HttpClient client = _httpClientFactory.CreateClient("default");
             client.DefaultRequestHeaders.UserAgent.Clear();
             client.DefaultRequestHeaders.UserAgent.ParseAdd("curl");
-            client.Timeout = new TimeSpan(0, 0, 20);
 
 
             HttpResponseMessage response = await client.GetAsync(newUrl);
@@ -144,7 +143,6 @@ public class InstagramScraper : ScraperBase
             try
             {
                 using HttpClient client = _httpClientFactory.CreateClient("default");
-                client.Timeout = new TimeSpan(0, 0, 5);
                 HttpResponseMessage response = await client.GetAsync(newUri.AbsoluteUri);
                 if (response.IsSuccessStatusCode)
                 {

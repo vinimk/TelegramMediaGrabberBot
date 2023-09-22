@@ -13,7 +13,6 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory) : ScraperBase(
         try
         {
             using HttpClient client = _httpClientFactory.CreateClient("default");
-            client.Timeout = new TimeSpan(0, 0, 5);
             HttpResponseMessage response = await client.GetAsync(postUrl.AbsoluteUri);
             HtmlDocument doc = new();
             doc.Load(await response.Content.ReadAsStreamAsync());
