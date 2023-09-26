@@ -16,28 +16,38 @@ public class ScrapedData : IDisposable
         Medias = new();
     }
 
-    public string TelegramFormatedText
+    public string GetTelegramFormatedText(bool isSpoiler = false)
     {
-        get
-        {
-            StringBuilder sb = new();
-            if (!string.IsNullOrWhiteSpace(Author))
-            {
-                _ = sb.Append($"<b>{HttpUtility.HtmlEncode(Author.Trim())}</b>:\n");
-            }
-            if (!string.IsNullOrWhiteSpace(Content))
-            {
-                _ = sb.Append($"{HttpUtility.HtmlEncode(Content.Trim())}\n");
-            }
-            if (!string.IsNullOrWhiteSpace(Uri?.AbsoluteUri))
-            {
-                _ = sb.Append($"<a href='{Uri?.AbsoluteUri.Trim()}'><i>Link</i></a>");
-            }
 
-            return sb.Length > 1024 ?
-                sb.ToString()[..1023]
-                : sb.ToString();
+        StringBuilder sb = new();
+        if (isSpoiler)
+        {
+            _ = sb.Append("<span class='tg-spoiler'>");
         }
+
+        if (!string.IsNullOrWhiteSpace(Author))
+        {
+            _ = sb.Append($"<b>{HttpUtility.HtmlEncode(Author.Trim())}</b>:\n");
+        }
+        if (!string.IsNullOrWhiteSpace(Content))
+        {
+            _ = sb.Append($"{HttpUtility.HtmlEncode(Content.Trim())}\n");
+        }
+        if (!string.IsNullOrWhiteSpace(Uri?.AbsoluteUri))
+        {
+            _ = sb.Append($"<a href='{Uri?.AbsoluteUri.Trim()}'><i>Link</i></a>");
+        }
+
+        if (isSpoiler)
+        {
+            _ = sb.Append("</span>");
+        }
+
+
+        return sb.Length > 1024 ?
+            sb.ToString()[..1023]
+            : sb.ToString();
+
     }
 
     public bool IsValid()

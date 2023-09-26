@@ -20,11 +20,13 @@ public static class TelegramMessageProcessor
             if (data != null)
             {
                 int? messageThreadId = null;
-                if (message.MessageThreadId != null &&
-                    message.MessageThreadId > 0)
+                if (message.MessageThreadId is not null and
+                    > 0)
                 {
                     messageThreadId = message.MessageThreadId;
                 }
+
+                bool isSpoiler = message.Entities != null && message.Entities.Any(x => x.Type == MessageEntityType.Spoiler);
 
                 switch (data.Type)
                 {
@@ -34,8 +36,6 @@ public static class TelegramMessageProcessor
                             List<IAlbumInputMedia> albumMedia = new();
                             foreach (Media media in data.Medias)
                             {
-
-
                                 ChatAction chatAction = media.Type == MediaType.Video ? ChatAction.UploadVideo : ChatAction.UploadPhoto;
 
                                 await botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: messageThreadId, chatAction: chatAction, cancellationToken: cancellationToken);
@@ -55,12 +55,12 @@ public static class TelegramMessageProcessor
                                     throw argumentNullException;
                                 }
 
-                                IAlbumInputMedia inputMedia = media.Type == MediaType.Video ? new InputMediaVideo(inputFile) : new InputMediaPhoto(inputFile);
+                                IAlbumInputMedia inputMedia = media.Type == MediaType.Video ? new InputMediaVideo(inputFile) { HasSpoiler = isSpoiler } : new InputMediaPhoto(inputFile) { HasSpoiler = isSpoiler };
 
                                 //workarround for showing the caption below the album, only add it to the first message.
                                 if (media == data.Medias.First())
                                 {
-                                    ((InputMedia)inputMedia).Caption = data.TelegramFormatedText;
+                                    ((InputMedia)inputMedia).Caption = data.GetTelegramFormatedText(isSpoiler);
                                     ((InputMedia)inputMedia).ParseMode = ParseMode.Html;
                                 }
                                 albumMedia.Add(inputMedia);
@@ -74,7 +74,7 @@ public static class TelegramMessageProcessor
                         }
                         break;
                     case ScrapedDataType.Text:
-                        _ = await botClient.SendTextMessageAsync(chatId: message.Chat, messageThreadId: messageThreadId, text: data.TelegramFormatedText, parseMode: ParseMode.Html, cancellationToken: cancellationToken);
+                        _ = await botClient.SendTextMessageAsync(chatId: message.Chat, messageThreadId: messageThreadId, text: data.GetTelegramFormatedText(isSpoiler), parseMode: ParseMode.Html, cancellationToken: cancellationToken);
                         break;
                 }
             }
@@ -85,7 +85,7 @@ public static class TelegramMessageProcessor
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed for {Message} for chat {chatName}, {threadId}", message.Text, message.Chat.Title + message.Chat.Username,message.MessageThreadId);
+            logger.LogError(ex, "Failed for {Message} for chat {chatName}, {threadId}", message.Text, message.Chat.Title + message.Chat.Username, message.MessageThreadId);
         }
     }
 }
