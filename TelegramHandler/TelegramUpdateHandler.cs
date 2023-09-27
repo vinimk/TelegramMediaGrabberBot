@@ -88,17 +88,17 @@ public partial class TelegramUpdateHandler : IUpdateHandler
                 };
             }
 
-            if (_whitelistedGroups != null &&
-                _whitelistedGroups.Any() &&
-                !_whitelistedGroups.Contains(message.Chat.Id))
-            {
-                string? notAllowedMessage = Properties.Resources.ResourceManager.GetString("GroupNotAllowed");
-                if (!string.IsNullOrEmpty(notAllowedMessage))
-                {
-                    _ = await _botClient.SendTextMessageAsync(message.Chat, notAllowedMessage, cancellationToken: cancellationToken);
-                    return;
-                }
-            }
+            //if (_whitelistedGroups != null &&
+            //    _whitelistedGroups.Any() &&
+            //    !_whitelistedGroups.Contains(message.Chat.Id))
+            //{
+            //    string? notAllowedMessage = Properties.Resources.ResourceManager.GetString("GroupNotAllowed");
+            //    if (!string.IsNullOrEmpty(notAllowedMessage))
+            //    {
+            //        _ = await _botClient.SendTextMessageAsync(message.Chat, notAllowedMessage, cancellationToken: cancellationToken);
+            //        return;
+            //    }
+            //}
 
             foreach (Uri? uri in from Match match in LinkParser.Matches(messageText)
                                  let uri = new UriBuilder(match.Value).Uri
@@ -106,13 +106,12 @@ public partial class TelegramUpdateHandler : IUpdateHandler
             {
                 if (!_supportedWebSites.Any(s => uri.AbsoluteUri.Contains(s, StringComparison.CurrentCultureIgnoreCase)))
                 {
-                    _logger.LogInformation("Ignoring message {Message} for chatName {chatName} because of no valid url", messageText, message.Chat.Title + message.Chat.Username);
                     return;
                 }
-                else
-                {
-                    _logger.LogInformation("Processing {URL} for chatName {chatName}", uri.AbsoluteUri, message.Chat.Title + message.Chat.Username);
-                }
+                //else
+                //{
+                //    _logger.LogInformation("Processing {URL} for chatName {chatName}", uri.AbsoluteUri, message.Chat.Title + message.Chat.Username);
+                //}
 
                 await TelegramMessageProcessor.ProcessMesage(_scraper, uri, message, _botClient, _logger, cancellationToken);
             }

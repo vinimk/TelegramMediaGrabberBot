@@ -1,18 +1,7 @@
-using Polly;
-using Polly.Extensions.Http;
-using Polly.Timeout;
 using Telegram.Bot;
 using TelegramMediaGrabberBot.Config;
 using TelegramMediaGrabberBot.Services;
 using TelegramMediaGrabberBot.TelegramHandler;
-
-static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
-{
-    return HttpPolicyExtensions
-      .HandleTransientHttpError()
-      .Or<TimeoutRejectedException>()
-      .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(5));
-}
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
