@@ -42,71 +42,86 @@ public static class TelegramMessageProcessor
                 switch (data.Type)
                 {
                     case ScrapedDataType.Media:
-                        if (data.Medias.Any())
+                        try
                         {
-                            List<IAlbumInputMedia> albumMedia = new();
-                            foreach (Media media in data.Medias)
+
+
+                            if (data.Medias.Any())
                             {
-                                ChatAction chatAction = media.Type == MediaType.Video ? ChatAction.UploadVideo : ChatAction.UploadPhoto;
+                                List<IAlbumInputMedia> albumMedia = new();
+                                foreach (Media media in data.Medias)
+                                {
+                                    ChatAction chatAction = media.Type == MediaType.Video ? ChatAction.UploadVideo : ChatAction.UploadPhoto;
+                                    try
+                                    {
+                                        _ = botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: messageThreadId, chatAction: chatAction, cancellationToken: cancellationToken);
+                                    }
+                                    catch (ApiRequestException ex) //workarround for sometimes the wrong thread being sent
+                                    {
+                                        if (ex.Message.Contains("message thread not found")) // if the issue is the thread, resend without thread
+                                        {
+                                            logger.LogError(ex, "Invalid threadID {Message} for chat {chatName}, {threadId}", message.Text, message.Chat.Title + message.Chat.Username, message.MessageThreadId);
+                                            _ = botClient.SendChatActionAsync(chatId: message.Chat, chatAction: chatAction, cancellationToken: cancellationToken);
+                                        }
+                                        throw ex;
+                                    }
+                                    catch (Exception) { throw; }
+
+
+                                    InputFile inputFile;
+                                    if (media.Uri != null)
+                                    {
+                                        inputFile = InputFile.FromUri(media.Uri);
+                                    }
+                                    else if (media.Stream != null)
+                                    {
+                                        inputFile = InputFile.FromStream(media.Stream, Guid.NewGuid().ToString());
+                                    }
+                                    else
+                                    {
+                                        ArgumentException argumentNullException = new("No URI or Stream for media");
+                                        throw argumentNullException;
+                                    }
+
+                                    IAlbumInputMedia inputMedia = media.Type == MediaType.Video ? new InputMediaVideo(inputFile) { HasSpoiler = isSpoiler } : new InputMediaPhoto(inputFile) { HasSpoiler = isSpoiler };
+
+                                    //workarround for showing the caption below the album, only add it to the first message.
+                                    if (media == data.Medias.First())
+                                    {
+                                        ((InputMedia)inputMedia).Caption = data.GetTelegramFormatedText(isSpoiler);
+                                        ((InputMedia)inputMedia).ParseMode = ParseMode.Html;
+                                    }
+                                    albumMedia.Add(inputMedia);
+                                }
+
                                 try
                                 {
-                                    _ = botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: messageThreadId, chatAction: chatAction, cancellationToken: cancellationToken);
+                                    _ = await botClient.SendMediaGroupAsync(chatId: message.Chat, messageThreadId: messageThreadId, media: albumMedia, cancellationToken: cancellationToken);
                                 }
                                 catch (ApiRequestException ex) //workarround for sometimes the wrong thread being sent
                                 {
                                     if (ex.Message.Contains("message thread not found")) // if the issue is the thread, resend without thread
                                     {
                                         logger.LogError(ex, "Invalid threadID {Message} for chat {chatName}, {threadId}", message.Text, message.Chat.Title + message.Chat.Username, message.MessageThreadId);
-                                        _ = botClient.SendChatActionAsync(chatId: message.Chat, chatAction: chatAction, cancellationToken: cancellationToken);
+                                        _ = await botClient.SendMediaGroupAsync(chatId: message.Chat, media: albumMedia, cancellationToken: cancellationToken);
                                     }
+                                    throw ex;
                                 }
                                 catch (Exception) { throw; }
 
-
-                                InputFile inputFile;
-                                if (media.Uri != null)
-                                {
-                                    inputFile = InputFile.FromUri(media.Uri);
-                                }
-                                else if (media.Stream != null)
-                                {
-                                    inputFile = InputFile.FromStream(media.Stream, Guid.NewGuid().ToString());
-                                }
-                                else
-                                {
-                                    ArgumentException argumentNullException = new("No URI or Stream for media");
-                                    throw argumentNullException;
-                                }
-
-                                IAlbumInputMedia inputMedia = media.Type == MediaType.Video ? new InputMediaVideo(inputFile) { HasSpoiler = isSpoiler } : new InputMediaPhoto(inputFile) { HasSpoiler = isSpoiler };
-
-                                //workarround for showing the caption below the album, only add it to the first message.
-                                if (media == data.Medias.First())
-                                {
-                                    ((InputMedia)inputMedia).Caption = data.GetTelegramFormatedText(isSpoiler);
-                                    ((InputMedia)inputMedia).ParseMode = ParseMode.Html;
-                                }
-                                albumMedia.Add(inputMedia);
                             }
-
-                            try
+                            else
                             {
-                                _ = await botClient.SendMediaGroupAsync(chatId: message.Chat, messageThreadId: messageThreadId, media: albumMedia, cancellationToken: cancellationToken);
+                                throw new Exception();
                             }
-                            catch (ApiRequestException ex) //workarround for sometimes the wrong thread being sent
-                            {
-                                if (ex.Message.Contains("message thread not found")) // if the issue is the thread, resend without thread
-                                {
-                                    logger.LogError(ex, "Invalid threadID {Message} for chat {chatName}, {threadId}", message.Text, message.Chat.Title + message.Chat.Username, message.MessageThreadId);
-                                    _ = await botClient.SendMediaGroupAsync(chatId: message.Chat, media: albumMedia, cancellationToken: cancellationToken);
-                                }
-                            }
-                            catch (Exception) { throw; }
-
                         }
-                        else
+                        catch (Exception)
                         {
-                            logger.LogError("No medias found in {URL}", uri.AbsoluteUri);
+                            logger.LogError("Error, trying forceDownload", uri.AbsoluteUri);
+                            if (forceDownload == false)
+                            {
+                                await ProcessMesage(scrapper, uri, message, botClient, logger, cancellationToken, true);
+                            }
                         }
                         break;
                     case ScrapedDataType.Text:
