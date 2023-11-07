@@ -44,8 +44,6 @@ public static class TelegramMessageProcessor
                     case ScrapedDataType.Media:
                         try
                         {
-
-
                             if (data.Medias.Any())
                             {
                                 List<IAlbumInputMedia> albumMedia = new();
@@ -117,7 +115,8 @@ public static class TelegramMessageProcessor
                         }
                         catch (Exception)
                         {
-                            logger.LogError("Error, trying forceDownload", uri.AbsoluteUri);
+                            logger.LogError("{uri} error, trying forceDownload", uri.AbsoluteUri);
+
                             if (forceDownload == false)
                             {
                                 await ProcessMesage(scrapper, uri, message, botClient, logger, cancellationToken, true);
@@ -143,6 +142,11 @@ public static class TelegramMessageProcessor
             }
             else
             {
+                if(forceDownload == false)
+                {
+                    await ProcessMesage(scrapper, uri, message, botClient, logger, cancellationToken, true);
+                }
+
                 logger.LogError("Failed to download any data for {URL}", uri.AbsoluteUri);
             }
         }
