@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Diagnostics;
 using HtmlAgilityPack;
-using System.Collections.Specialized;
 using System.Web;
 using TelegramMediaGrabberBot.DataStructures;
 using TelegramMediaGrabberBot.DataStructures.Medias;
@@ -19,16 +18,16 @@ public class InstagramScraper : ScraperBase
         _bibliogramInstances = bibliogramInstances;
     }
 
-    public override async Task<ScrapedData?> ExtractContentAsync(Uri instagramUrl, bool forceDownload = false)
+    public override async Task<ScrapedData?> ExtractContentAsync(Uri instagramUrl)
     {
         ScrapedData? scrapedData = await ExtractFromDDInstagram(instagramUrl);
         if (scrapedData == null || !scrapedData.IsValid())
         {
-            scrapedData = await ExtractFromBibliogram(instagramUrl, forceDownload);
+            scrapedData = await ExtractFromBibliogram(instagramUrl);
 
             if (scrapedData == null || !scrapedData.IsValid())
             {
-                MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri, forceDownload);
+                MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
                 return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = instagramUrl, Medias = new List<Media>() { videoObj } } : null;
             }
         }
@@ -127,7 +126,7 @@ public class InstagramScraper : ScraperBase
         return null;
     }
 
-    public async Task<ScrapedData?> ExtractFromBibliogram(Uri instagramUrl, bool forceDownload = false)
+    public async Task<ScrapedData?> ExtractFromBibliogram(Uri instagramUrl)
     {
         foreach (string bibliogramInstance in _bibliogramInstances)
         {
@@ -180,7 +179,7 @@ public class InstagramScraper : ScraperBase
 
                         Uri videoUri = new(videoUrl);
 
-                        MediaDetails? video = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri, forceDownload);
+                        MediaDetails? video = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
                         if (video != null)
                         {
                             scraped.Medias.Add(video);
@@ -213,25 +212,8 @@ public class InstagramScraper : ScraperBase
                                     type = MediaType.Video;
                                 }
 
-                                Media media;
-                                if (forceDownload == true)
-                                {
-                                    Stream? stream = null;
-                                    NameValueCollection queryString = HttpUtility.ParseQueryString(uri.Query);
-                                    if (queryString != null)
-                                    {
-                                        string? directInstagramUrl = queryString["url"];
-                                        if (directInstagramUrl != null)
-                                        {
-                                            stream = await HttpUtils.GetStreamFromUrl(new Uri(directInstagramUrl, UriKind.Absolute));
-                                        }
-                                    }
-                                    media = new() { Stream = stream, Type = type };
-                                }
-                                else
-                                {
-                                    media = new() { Uri = uri, Type = type };
-                                }
+                                Media media = new() { Uri = uri, Type = type };
+
                                 scraped.Medias.Add(media);
                             }
                         }

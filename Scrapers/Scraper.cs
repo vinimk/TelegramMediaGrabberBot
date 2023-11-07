@@ -1,7 +1,9 @@
 ﻿using CommunityToolkit.Diagnostics;
 using TelegramMediaGrabberBot.Config;
 using TelegramMediaGrabberBot.DataStructures;
+using TelegramMediaGrabberBot.DataStructures.Medias;
 using TelegramMediaGrabberBot.Scrapers.Implementations;
+using TelegramMediaGrabberBot.Utils;
 
 namespace TelegramMediaGrabberBot.Scrapers;
 
@@ -28,26 +30,26 @@ public class Scraper
     {
         try
         {
-            return uri.AbsoluteUri.Contains("twitter.com")
-                ? await _twitterScraper.ExtractContentAsync(uri, forceDownload)
-                : uri.AbsoluteUri.Contains("x.com")
-                ? await _twitterScraper.ExtractContentAsync(uri, forceDownload)
-                : uri.AbsoluteUri.Contains("instagram.com")
-                ? await _instagramScraper.ExtractContentAsync(uri, forceDownload)
-                //: uri.AbsoluteUri.Contains("bsky.app")
-                //? await _blueSkyScraper.ExtractContentAsync(uri, forceDownload)
-                : await _genericScraper.ExtractContentAsync(uri, forceDownload);
+            if (forceDownload == false)
+            {
+                return uri.AbsoluteUri.Contains("twitter.com")
+                    ? await _twitterScraper.ExtractContentAsync(uri)
+                    : uri.AbsoluteUri.Contains("x.com")
+                    ? await _twitterScraper.ExtractContentAsync(uri)
+                    : uri.AbsoluteUri.Contains("instagram.com")
+                    ? await _instagramScraper.ExtractContentAsync(uri)
+                    //: uri.AbsoluteUri.Contains("bsky.app")
+                    //? await _blueSkyScraper.ExtractContentAsync(uri, forceDownload)
+                    : await _genericScraper.ExtractContentAsync(uri);
+            }
+            else
+            {
+                MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri, forceDownload);
+                return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = uri, Medias = new List<Media>() { videoObj } } : null;
+            }
         }
         catch (Exception ex)
         {
-            if (forceDownload == false)
-            {
-                try
-                {
-                    _ = await GetScrapedDataFromUrlAsync(uri, true);
-                }
-                catch { }
-            }
             _logger.LogError("scrapper error", ex);
             return null;
         }

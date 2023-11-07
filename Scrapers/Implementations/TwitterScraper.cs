@@ -20,26 +20,20 @@ public class TwitterScraper : ScraperBase
         _nitterInstances = nitterInstances;
     }
 
-    public override async Task<ScrapedData?> ExtractContentAsync(Uri twitterUrl, bool forceDownload = false)
+    public override async Task<ScrapedData?> ExtractContentAsync(Uri url)
     {
-        ScrapedData? scrapedData = await ExtractFromFXTwitter(twitterUrl);
+        ScrapedData? scrapedData = await ExtractFromFXTwitter(url);
         if (scrapedData == null || !scrapedData.IsValid())
         {
-            scrapedData = await ExtractFromNitter(twitterUrl, forceDownload);
-
-            if (scrapedData == null || !scrapedData.IsValid())
-            {
-                MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri, forceDownload);
-                return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = twitterUrl, Medias = new List<Media>() { videoObj } } : null;
-            }
+            scrapedData = await ExtractFromNitter(url);
         }
         return scrapedData;
     }
 
-    public async Task<ScrapedData?> ExtractFromFXTwitter(Uri twitterUrl)
+    public async Task<ScrapedData?> ExtractFromFXTwitter(Uri url)
     {
         string host = "api.fxtwitter.com";
-        UriBuilder newUriBuilder = new(twitterUrl)
+        UriBuilder newUriBuilder = new(url)
         {
             Scheme = Uri.UriSchemeHttps,
             Host = host,
@@ -62,7 +56,7 @@ public class TwitterScraper : ScraperBase
                 Tweet post = response.Post;
                 ScrapedData scraped = new()
                 {
-                    Uri = twitterUrl,
+                    Uri = url,
                     Content = post.Text,
                     Type = ScrapedDataType.Text
                 };
@@ -113,11 +107,11 @@ public class TwitterScraper : ScraperBase
     }
 
 
-    public async Task<ScrapedData?> ExtractFromNitter(Uri twitterUrl, bool forceDownload)
+    public async Task<ScrapedData?> ExtractFromNitter(Uri url)
     {
         foreach (string nitterInstance in _nitterInstances)
         {
-            UriBuilder newUriBuilder = new(twitterUrl)
+            UriBuilder newUriBuilder = new(url)
             {
                 Host = nitterInstance
             };
@@ -136,7 +130,7 @@ public class TwitterScraper : ScraperBase
 
                 ScrapedData scraped = new()
                 {
-                    Uri = twitterUrl
+                    Uri = url
                 };
 
                 string tweetContet = HttpUtility.HtmlDecode(metaNodes.
@@ -162,7 +156,7 @@ public class TwitterScraper : ScraperBase
                 {
                     case "video":
                         scraped.Type = ScrapedDataType.Media;
-                        Media? media = await YtDownloader.DownloadVideoFromUrlAsync(twitterUrl.AbsoluteUri, forceDownload);
+                        Media? media = await YtDownloader.DownloadVideoFromUrlAsync(url.AbsoluteUri);
                         if (media != null)
                         {
                             scraped.Medias = new List<Media>() { media };
@@ -181,25 +175,9 @@ public class TwitterScraper : ScraperBase
 
                         if (uriMedias.Count > 0)
                         {
-                            if (forceDownload)
-                            {
-                                scraped.Medias = new();
-                                foreach (Uri? uri in uriMedias)
-                                {
-                                    Stream? stream = await HttpUtils.GetStreamFromUrl(uri);
-                                    if (stream != null)
-                                    {
-                                        Media imageMedia = new() { Stream = stream, Type = MediaType.Image };
-                                        scraped.Medias.Add(imageMedia);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                scraped.Medias = uriMedias
-                                    .Select(x => new Media { Uri = x, Type = MediaType.Image })
-                                    .ToList();
-                            }
+                            scraped.Medias = uriMedias
+                                .Select(x => new Media { Uri = x, Type = MediaType.Image })
+                                .ToList();
                         }
                         break;
                     case "article":

@@ -2,13 +2,12 @@
 using System.Web;
 using TelegramMediaGrabberBot.DataStructures;
 using TelegramMediaGrabberBot.DataStructures.Medias;
-using TelegramMediaGrabberBot.Utils;
 
 namespace TelegramMediaGrabberBot.Scrapers.Implementations;
 
 public class BlueSkyScraper(IHttpClientFactory httpClientFactory) : ScraperBase(httpClientFactory)
 {
-    public override async Task<ScrapedData?> ExtractContentAsync(Uri postUrl, bool forceDownload = false)
+    public override async Task<ScrapedData?> ExtractContentAsync(Uri postUrl)
     {
         try
         {
@@ -66,25 +65,9 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory) : ScraperBase(
 
                     if (uriMedias.Count > 0)
                     {
-                        if (forceDownload)
-                        {
-                            scraped.Medias = new();
-                            foreach (Uri? uri in uriMedias)
-                            {
-                                Stream? stream = await HttpUtils.GetStreamFromUrl(uri);
-                                if (stream != null)
-                                {
-                                    Media imageMedia = new() { Stream = stream, Type = MediaType.Image };
-                                    scraped.Medias.Add(imageMedia);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            scraped.Medias = uriMedias
-                                .Select(x => new Media { Uri = x, Type = MediaType.Image })
-                                .ToList();
-                        }
+                        scraped.Medias = uriMedias
+                            .Select(x => new Media { Uri = x, Type = MediaType.Image })
+                            .ToList();
                     }
                     break;
                 case "article":
