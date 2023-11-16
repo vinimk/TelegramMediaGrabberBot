@@ -44,9 +44,9 @@ public static class TelegramMessageProcessor
                     case ScrapedDataType.Media:
                         try
                         {
-                            if (data.Medias.Any())
+                            if (data.Medias.Count != 0)
                             {
-                                List<IAlbumInputMedia> albumMedia = new();
+                                List<IAlbumInputMedia> albumMedia = [];
                                 foreach (Media media in data.Medias)
                                 {
                                     ChatAction chatAction = media.Type == MediaType.Video ? ChatAction.UploadVideo : ChatAction.UploadPhoto;
@@ -61,7 +61,7 @@ public static class TelegramMessageProcessor
                                             logger.LogError(ex, "Invalid threadID {Message} for chat {chatName}, {threadId}", message.Text, message.Chat.Title + message.Chat.Username, message.MessageThreadId);
                                             _ = botClient.SendChatActionAsync(chatId: message.Chat, chatAction: chatAction, cancellationToken: cancellationToken);
                                         }
-                                        throw ex;
+                                        throw;
                                     }
                                     catch (Exception) { throw; }
 
@@ -103,7 +103,7 @@ public static class TelegramMessageProcessor
                                         logger.LogError(ex, "Invalid threadID {Message} for chat {chatName}, {threadId}", message.Text, message.Chat.Title + message.Chat.Username, message.MessageThreadId);
                                         _ = await botClient.SendMediaGroupAsync(chatId: message.Chat, media: albumMedia, cancellationToken: cancellationToken);
                                     }
-                                    throw ex;
+                                    throw;
                                 }
                                 catch (Exception) { throw; }
 
@@ -142,7 +142,7 @@ public static class TelegramMessageProcessor
             }
             else
             {
-                if(forceDownload == false)
+                if (forceDownload == false)
                 {
                     await ProcessMesage(scrapper, uri, message, botClient, logger, cancellationToken, true);
                 }

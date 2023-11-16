@@ -159,7 +159,7 @@ public class TwitterScraper : ScraperBase
                         Media? media = await YtDownloader.DownloadVideoFromUrlAsync(url.AbsoluteUri);
                         if (media != null)
                         {
-                            scraped.Medias = new List<Media>() { media };
+                            scraped.Medias = [media];
                         }
                         break;
 

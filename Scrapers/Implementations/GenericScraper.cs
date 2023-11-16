@@ -15,7 +15,7 @@ public class GenericScraper(IHttpClientFactory httpClientFactory) : ScraperBase(
             ScrapedData scraped = new()
             {
                 Uri = new Uri(urlRequest, UriKind.Absolute),
-                Medias = new() { media },
+                Medias = [media],
                 Content = media.Content,
                 Author = media.Author,
                 Type = ScrapedDataType.Media

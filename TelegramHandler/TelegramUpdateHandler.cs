@@ -18,7 +18,6 @@ public partial class TelegramUpdateHandler : IUpdateHandler
     private readonly Scraper _scraper;
 
     private static readonly Regex LinkParser = UrlRegex();
-    private readonly List<long?>? _whitelistedGroups;
     private readonly List<string> _supportedWebSites;
 
     #endregion
@@ -32,7 +31,6 @@ public partial class TelegramUpdateHandler : IUpdateHandler
         _httpClientFactory = httpClientFactory;
         _scraper = new Scraper(_httpClientFactory, appSettings);
         _supportedWebSites = appSettings.SupportedWebSites;
-        _whitelistedGroups = appSettings.WhitelistedGroups;
     }
 
 

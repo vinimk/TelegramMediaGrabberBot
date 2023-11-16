@@ -28,7 +28,7 @@ public class InstagramScraper : ScraperBase
             if (scrapedData == null || !scrapedData.IsValid())
             {
                 MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
-                return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = instagramUrl, Medias = new List<Media>() { videoObj } } : null;
+                return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = instagramUrl, Medias = [videoObj] } : null;
             }
         }
         return scrapedData;

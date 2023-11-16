@@ -45,12 +45,12 @@ public class Scraper
             else
             {
                 MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri, forceDownload);
-                return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = uri, Medias = new List<Media>() { videoObj } } : null;
+                return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = uri, Medias = [videoObj] } : null;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError("scrapper error", ex);
+            _logger.LogError("scrapper error {ex}", ex);
             return null;
         }
     }

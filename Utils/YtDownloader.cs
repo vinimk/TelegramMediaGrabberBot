@@ -9,6 +9,10 @@ public static class YtDownloader
 {
     private static DateTime LastUpdateOfYtDlp;
     private static readonly ILogger log = ApplicationLogging.CreateLogger("YtDownloader");
+    private static readonly string[] updateArguments = [
+                        "-U"
+            ];
+
     //private static string InstagramUserName = "";
     //private static string InstagramPassword = "";
     static YtDownloader()
@@ -126,9 +130,7 @@ public static class YtDownloader
         StringBuilder stdOutBufferUpdate = new();
 
         _ = await Cli.Wrap("yt-dlp")
-            .WithArguments(new[] {
-                        "-U"
-            })
+            .WithArguments(updateArguments)
         .WithValidation(CommandResultValidation.None)
         .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBufferUpdate))
         .ExecuteBufferedAsync();

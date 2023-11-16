@@ -1,6 +1,6 @@
 #See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
-FROM mcr.microsoft.com/dotnet/runtime:7.0 AS base
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS base
 
 RUN set -x && \
     apt update && \
@@ -8,6 +8,12 @@ RUN set -x && \
         wget \
         python3 \
         python3-pip
+
+RUN set -x && \
+    wget 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp' -P /tmp/yt-dlp/ && \
+    chmod -R a+x /tmp/yt-dlp/* && \
+    mv /tmp/yt-dlp/yt-dlp /usr/local/bin/ && \
+    rm -rf /tmp/*
 
 RUN set -x && \
     ARCH=`uname -m` && \
@@ -27,31 +33,9 @@ RUN set -x && \
         rm -rf /tmp/* ; \
     fi
 
-RUN set -ex && \
-    ARCH=`uname -m` && \
-    if [ "$ARCH" = "x86_64" ]; then \
-        s6_package="s6-overlay-amd64.tar.gz" ; \
-    elif [ "$ARCH" = "aarch64" ]; then \
-        s6_package="s6-overlay-aarch64.tar.gz" ; \
-    else \
-        echo "unknown arch: ${ARCH}" && \
-        exit 1 ; \
-    fi && \
-    wget -P /tmp/ https://github.com/just-containers/s6-overlay/releases/download/v2.2.0.3/${s6_package} && \
-    tar -xzf /tmp/${s6_package} -C / && \
-    rm -rf /tmp/*
-
-#RUN set -x && \
-#    python3 -m pip --no-cache-dir install -U yt-dlp
-RUN set -x && \
-    wget 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp' -P /tmp/yt-dlp/ && \
-    chmod -R a+x /tmp/yt-dlp/* && \
-    mv /tmp/yt-dlp/yt-dlp /usr/local/bin/ && \
-    rm -rf /tmp/*
-
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY ["TelegramMediaGrabberBot.csproj", "."]
 RUN dotnet restore "./TelegramMediaGrabberBot.csproj"

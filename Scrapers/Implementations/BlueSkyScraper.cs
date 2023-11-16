@@ -80,7 +80,7 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory) : ScraperBase(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to scrap bluesky", postUrl.AbsoluteUri);
+            _logger.LogError(ex, "Failed to scrap bluesky {uri}", postUrl.AbsoluteUri);
         }
         return null;
     }

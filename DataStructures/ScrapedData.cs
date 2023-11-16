@@ -13,7 +13,7 @@ public class ScrapedData : IDisposable
     public ScrapedDataType Type { get; set; }
     public ScrapedData()
     {
-        Medias = new();
+        Medias = [];
     }
 
     public string GetTelegramFormatedText(bool isSpoiler = false)
@@ -55,7 +55,7 @@ public class ScrapedData : IDisposable
         switch (Type)
         {
             case ScrapedDataType.Media:
-                if (Medias.Any())
+                if (Medias.Count != 0)
                 {
                     return true;
                 }
