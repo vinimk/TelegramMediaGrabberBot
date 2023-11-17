@@ -13,7 +13,7 @@ public static class YtDownloader
                         "-U"
             ];
     private static readonly int _maxFileSize = 52428800; //about 50MB, current filesize limit for telegram bots https://core.telegram.org/bots/faq#how-do-i-upload-a-large-file
-    private static readonly string _ytdlpFormat = "b*[filesize<50M]/b*[filesize_approx<50M]/bv*[filesize<=45M]+ba*[filesize<=5M]/bv*[vbr<=700]+ba/b";
+    private static readonly string _ytdlpFormat = "bv*[filesize<=45M]+ba*[filesize<=5M]/bv*[vbr<=700]+ba/b*[filesize<50M]/b*[filesize_approx<50M]/b";
     static YtDownloader()
     {
         LastUpdateOfYtDlp = new();
@@ -49,8 +49,6 @@ public static class YtDownloader
                                     ,"--add-header","User-Agent:facebookexternalhit/1.1"
                                     ,"--embed-metadata"
                                     ,"--exec" ,"echo"
-                                    //,"--username", InstagramUserName
-                                    //, "--password", InstagramPassword
                                     , url
                                 }
                                 ).WithValidation(CommandResultValidation.None)
@@ -73,10 +71,9 @@ public static class YtDownloader
                                     "-o", fileName
                                     ,"-f", _ytdlpFormat
                                     ,"--add-header","User-Agent:facebookexternalhit/1.1"
+                                    //,"--ppa", $"FFmpeg:-max_muxing_queue_size 9999 -c:v libx264 -crf 23 -maxrate 4.5M -preset faster -flags +global_header -pix_fmt yuv420p -profile:v baseline -movflags +faststart -c:a aac -ac 2"
                                     ,"--embed-metadata"
                                     ,"--exec" ,"echo"
-                                    //,"--username", InstagramUserName
-                                    //, "--password", InstagramPassword
                                     , url
                                 }
                                 ).WithValidation(CommandResultValidation.None)
