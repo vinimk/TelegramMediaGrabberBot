@@ -28,30 +28,22 @@ public class Scraper
 
     public async Task<ScrapedData?> GetScrapedDataFromUrlAsync(Uri uri, bool forceDownload = false)
     {
-        try
+        if (forceDownload == false)
         {
-            if (forceDownload == false)
-            {
-                return uri.AbsoluteUri.Contains("twitter.com")
-                    ? await _twitterScraper.ExtractContentAsync(uri)
-                    : uri.AbsoluteUri.Contains("x.com")
-                    ? await _twitterScraper.ExtractContentAsync(uri)
-                    : uri.AbsoluteUri.Contains("instagram.com")
-                    ? await _instagramScraper.ExtractContentAsync(uri)
-                    //: uri.AbsoluteUri.Contains("bsky.app")
-                    //? await _blueSkyScraper.ExtractContentAsync(uri, forceDownload)
-                    : await _genericScraper.ExtractContentAsync(uri);
-            }
-            else
-            {
-                MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri, forceDownload);
-                return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = uri, Medias = [videoObj] } : null;
-            }
+            return uri.AbsoluteUri.Contains("twitter.com")
+                ? await _twitterScraper.ExtractContentAsync(uri)
+                : uri.AbsoluteUri.Contains("x.com")
+                ? await _twitterScraper.ExtractContentAsync(uri)
+                : uri.AbsoluteUri.Contains("instagram.com")
+                ? await _instagramScraper.ExtractContentAsync(uri)
+                //: uri.AbsoluteUri.Contains("bsky.app")
+                //? await _blueSkyScraper.ExtractContentAsync(uri, forceDownload)
+                : await _genericScraper.ExtractContentAsync(uri);
         }
-        catch (Exception ex)
+        else
         {
-            _logger.LogError("scrapper error {ex}", ex);
-            return null;
+            MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri, forceDownload);
+            return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = uri, Medias = [videoObj] } : null;
         }
     }
 }
