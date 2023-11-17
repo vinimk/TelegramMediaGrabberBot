@@ -1,5 +1,4 @@
 ﻿using Telegram.Bot;
-using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramMediaGrabberBot.DataStructures;
@@ -86,7 +85,7 @@ public static class TelegramMessageProcessor
                         }
                         break;
                     case ScrapedDataType.Text:
-                            _ = await botClient.SendTextMessageAsync(chatId: message.Chat, messageThreadId: messageThreadId, text: data.GetTelegramFormatedText(isSpoiler), parseMode: ParseMode.Html, cancellationToken: cancellationToken);
+                        _ = await botClient.SendTextMessageAsync(chatId: message.Chat, messageThreadId: messageThreadId, text: data.GetTelegramFormatedText(isSpoiler), parseMode: ParseMode.Html, cancellationToken: cancellationToken);
                         break;
                 }
             }

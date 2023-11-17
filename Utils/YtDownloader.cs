@@ -12,9 +12,8 @@ public static class YtDownloader
     private static readonly string[] updateArguments = [
                         "-U"
             ];
+    private static readonly int _maxFileSize = 52428800; //about 50MB, current filesize limit for telegram bots https://core.telegram.org/bots/faq#how-do-i-upload-a-large-file
 
-    //private static string InstagramUserName = "";
-    //private static string InstagramPassword = "";
     static YtDownloader()
     {
         LastUpdateOfYtDlp = new();
@@ -37,6 +36,32 @@ public static class YtDownloader
                 urlResult.StandardOutput.Split("\n").Length <= 2) //workarround for some providers (youtube shorts for ex) that has different tracks for video/sound
             {
                 return new MediaDetails { Uri = new Uri(urlResult.StandardOutput.Replace("\n", "")), Type = MediaType.Video };
+            }
+        }
+
+
+        //first check for the filesize 
+        BufferedCommandResult dlFileSize = await Cli.Wrap("yt-dlp")
+                                .WithArguments(new[]
+                                {
+                                    //"-vU"
+                                    "-O", "%(filesize,filesize_approx)s"
+                                    ,"--add-header","User-Agent:facebookexternalhit/1.1"
+                                    ,"--embed-metadata"
+                                    ,"--exec" ,"echo"
+                                    //,"--username", InstagramUserName
+                                    //, "--password", InstagramPassword
+                                    , url
+                                }
+                                ).WithValidation(CommandResultValidation.None)
+                                .ExecuteBufferedAsync();
+
+        if (dlFileSize.StandardOutput.Length > 0) //workarround for some providers (ie tiktok that return weird separated filenames)
+        {
+            if (int.TryParse(dlFileSize.StandardOutput.Trim(), out int fileSize) &&
+                fileSize > _maxFileSize)
+            {
+                throw new InvalidOperationException("File too big");
             }
         }
 
@@ -67,9 +92,8 @@ public static class YtDownloader
 
         if (File.Exists(fileName))
         {
-            byte[] bytes = await File.ReadAllBytesAsync(fileName);
-            Stream stream = new MemoryStream(bytes, false);
-            
+            Stream stream = File.OpenRead(fileName);
+
             log.LogInformation("downloaded video for url {url} size: {size}MB", url, stream.Length / 1024.0f / 1024.0f);
 
             try
