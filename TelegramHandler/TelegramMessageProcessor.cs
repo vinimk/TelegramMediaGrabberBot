@@ -14,26 +14,15 @@ public static class TelegramMessageProcessor
     {
         try
         {
-
             int? messageThreadId = message.IsTopicMessage is not null &&
                 message.IsTopicMessage == true &&
                 message.MessageThreadId is not null and > 0
                 ? message.MessageThreadId
                 : null;
-            try
-            {
-                _ = botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: messageThreadId, chatAction: ChatAction.Typing, cancellationToken: cancellationToken);
-            }
-            catch (ApiRequestException ex) //workarround for sometimes the wrong thread being sent
-            {
-                if (ex.Message.Contains("message thread not found")) // if the issue is the thread, resend without thread
-                {
-                    logger.LogError(ex, "Invalid threadID {Message} for chat {chatName}, {threadId}", message.Text, message.Chat.Title + message.Chat.Username, message.MessageThreadId);
-                    _ = botClient.SendChatActionAsync(chatId: message.Chat, chatAction: ChatAction.Typing, cancellationToken: cancellationToken);
-                }
-            }
-            catch (Exception) { throw; }
-            ScrapedData? data = await scrapper.GetScrapedDataFromUrlAsync(uri, forceDownload);
+
+            _ = botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: messageThreadId, chatAction: ChatAction.Typing, cancellationToken: cancellationToken);
+
+            using ScrapedData? data = await scrapper.GetScrapedDataFromUrlAsync(uri, forceDownload);
 
             if (data != null)
             {
@@ -50,21 +39,8 @@ public static class TelegramMessageProcessor
                                 foreach (Media media in data.Medias)
                                 {
                                     ChatAction chatAction = media.Type == MediaType.Video ? ChatAction.UploadVideo : ChatAction.UploadPhoto;
-                                    try
-                                    {
-                                        _ = botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: messageThreadId, chatAction: chatAction, cancellationToken: cancellationToken);
-                                    }
-                                    catch (ApiRequestException ex) //workarround for sometimes the wrong thread being sent
-                                    {
-                                        if (ex.Message.Contains("message thread not found")) // if the issue is the thread, resend without thread
-                                        {
-                                            logger.LogError(ex, "Invalid threadID {Message} for chat {chatName}, {threadId}", message.Text, message.Chat.Title + message.Chat.Username, message.MessageThreadId);
-                                            _ = botClient.SendChatActionAsync(chatId: message.Chat, chatAction: chatAction, cancellationToken: cancellationToken);
-                                        }
-                                        throw;
-                                    }
-                                    catch (Exception) { throw; }
 
+                                    _ = botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: messageThreadId, chatAction: chatAction, cancellationToken: cancellationToken);
 
                                     InputFile inputFile;
                                     if (media.Uri != null)
@@ -92,21 +68,7 @@ public static class TelegramMessageProcessor
                                     albumMedia.Add(inputMedia);
                                 }
 
-                                try
-                                {
-                                    _ = await botClient.SendMediaGroupAsync(chatId: message.Chat, messageThreadId: messageThreadId, media: albumMedia, cancellationToken: cancellationToken);
-                                }
-                                catch (ApiRequestException ex) //workarround for sometimes the wrong thread being sent
-                                {
-                                    if (ex.Message.Contains("message thread not found")) // if the issue is the thread, resend without thread
-                                    {
-                                        logger.LogError(ex, "Invalid threadID {Message} for chat {chatName}, {threadId}", message.Text, message.Chat.Title + message.Chat.Username, message.MessageThreadId);
-                                        _ = await botClient.SendMediaGroupAsync(chatId: message.Chat, media: albumMedia, cancellationToken: cancellationToken);
-                                    }
-                                    throw;
-                                }
-                                catch (Exception) { throw; }
-
+                                _ = await botClient.SendMediaGroupAsync(chatId: message.Chat, messageThreadId: messageThreadId, media: albumMedia, cancellationToken: cancellationToken);
                             }
                             else
                             {
@@ -124,30 +86,13 @@ public static class TelegramMessageProcessor
                         }
                         break;
                     case ScrapedDataType.Text:
-                        try
-                        {
                             _ = await botClient.SendTextMessageAsync(chatId: message.Chat, messageThreadId: messageThreadId, text: data.GetTelegramFormatedText(isSpoiler), parseMode: ParseMode.Html, cancellationToken: cancellationToken);
-                        }
-                        catch (ApiRequestException ex) //workarround for sometimes the wrong thread being sent
-                        {
-                            if (ex.Message.Contains("message thread not found")) // if the issue is the thread, resend without thread
-                            {
-                                logger.LogError(ex, "Invalid threadID {Message} for chat {chatName}, {threadId}", message.Text, message.Chat.Title + message.Chat.Username, message.MessageThreadId);
-                                _ = await botClient.SendTextMessageAsync(chatId: message.Chat, text: data.GetTelegramFormatedText(isSpoiler), parseMode: ParseMode.Html, cancellationToken: cancellationToken);
-                            }
-                        }
-                        catch (Exception) { throw; }
                         break;
                 }
             }
             else
             {
-                if (forceDownload == false)
-                {
-                    await ProcessMesage(scrapper, uri, message, botClient, logger, cancellationToken, true);
-                }
-
-                logger.LogError("Failed to download any data for {URL}", uri.AbsoluteUri);
+                throw new Exception();
             }
         }
         catch (Exception ex)
