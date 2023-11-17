@@ -75,6 +75,6 @@ public class ScrapedData : IDisposable
 
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
+        Medias.Clear();
     }
 }

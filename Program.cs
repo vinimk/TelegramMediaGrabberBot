@@ -1,4 +1,5 @@
 using Telegram.Bot;
+using TelegramMediaGrabberBot;
 using TelegramMediaGrabberBot.Config;
 using TelegramMediaGrabberBot.Services;
 using TelegramMediaGrabberBot.TelegramHandler;
@@ -75,4 +76,11 @@ IHost host = Host.CreateDefaultBuilder(args)
     })
     .Build();
 
-await host.RunAsync();
+try
+{
+    await host.RunAsync();
+}
+catch (Exception ex)
+{
+    ApplicationLogging.CreateLogger("Program.cs").LogError("program.cs error {ex}", ex);
+}

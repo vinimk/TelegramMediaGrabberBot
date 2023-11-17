@@ -67,8 +67,7 @@ public static class YtDownloader
 
         if (File.Exists(fileName))
         {
-            byte[] bytes = await File.ReadAllBytesAsync(fileName);
-            Stream stream = new MemoryStream(bytes);
+            Stream stream = File.OpenRead(fileName);
             log.LogInformation("downloaded video for url {url} size: {size}MB", url, stream.Length / 1024.0f / 1024.0f);
 
             try
@@ -97,7 +96,6 @@ public static class YtDownloader
                     Type = MediaType.Video
                 };
             }
-
         }
         else
         {

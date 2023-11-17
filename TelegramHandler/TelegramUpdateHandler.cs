@@ -68,13 +68,13 @@ public partial class TelegramUpdateHandler : IUpdateHandler
 
     #endregion
 
-    private async Task BotOnMessageReceived(Message message, CancellationToken cancellationToken)
+    private Task BotOnMessageReceived(Message message, CancellationToken cancellationToken)
     {
         try
         {
             if (message.Text is not { } messageText)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (messageText.Contains('@'))
@@ -104,20 +104,18 @@ public partial class TelegramUpdateHandler : IUpdateHandler
             {
                 if (!_supportedWebSites.Any(s => uri.AbsoluteUri.Contains(s, StringComparison.CurrentCultureIgnoreCase)))
                 {
-                    return;
+                    return Task.CompletedTask;
                 }
-                //else
-                //{
-                //    _logger.LogInformation("Processing {URL} for chatName {chatName}", uri.AbsoluteUri, message.Chat.Title + message.Chat.Username);
-                //}
 
-                await TelegramMessageProcessor.ProcessMesage(_scraper, uri, message, _botClient, _logger, cancellationToken);
+                _ = TelegramMessageProcessor.ProcessMesage(_scraper, uri, message, _botClient, _logger, cancellationToken);
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "{message} {chatname}", message.Text, message.Chat.Title + message.Chat.Username);
         }
+
+        return Task.CompletedTask;
     }
 
     private static async Task SendRojao(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)

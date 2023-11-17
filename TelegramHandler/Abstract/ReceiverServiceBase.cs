@@ -25,20 +25,27 @@ public abstract class ReceiverServiceBase<TUpdateHandler>(
     /// <returns></returns>
     public async Task ReceiveAsync(CancellationToken stoppingToken)
     {
-        // ToDo: we can inject ReceiverOptions through IOptions container
-        ReceiverOptions receiverOptions = new()
+        try
         {
-            AllowedUpdates = Array.Empty<UpdateType>(),
-            ThrowPendingUpdates = true,
-        };
+            ReceiverOptions receiverOptions = new()
+            {
+                AllowedUpdates = Array.Empty<UpdateType>(),
+                ThrowPendingUpdates = true,
+            };
 
-        Telegram.Bot.Types.User me = await _botClient.GetMeAsync(stoppingToken);
-        _logger.LogInformation("Start receiving updates for {BotName}", me.Username ?? "My Awesome Bot");
+            Telegram.Bot.Types.User me = await _botClient.GetMeAsync(stoppingToken);
+            _logger.LogInformation("Start receiving updates for {BotName}", me.Username ?? "My Awesome Bot");
 
-        // Start receiving updates
-        await _botClient.ReceiveAsync(
-            updateHandler: _updateHandlers,
-            receiverOptions: receiverOptions,
-            cancellationToken: stoppingToken);
+
+            // Start receiving updates
+            await _botClient.ReceiveAsync(
+                updateHandler: _updateHandlers,
+                receiverOptions: receiverOptions,
+                cancellationToken: stoppingToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical("Error receiving messages {ex}", ex);
+        }
     }
 }
