@@ -77,5 +77,6 @@ public class ScrapedData : IDisposable
     {
         Medias.ForEach(x => x.Stream?.Dispose());
         Medias.Clear();
+        GC.SuppressFinalize(this);
     }
 }

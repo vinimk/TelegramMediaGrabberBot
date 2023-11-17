@@ -13,7 +13,7 @@ public static class YtDownloader
                         "-U"
             ];
     private static readonly int _maxFileSize = 52428800; //about 50MB, current filesize limit for telegram bots https://core.telegram.org/bots/faq#how-do-i-upload-a-large-file
-
+    private static readonly string _ytdlpFormat = "b*[filesize<50M]/b*[filesize_approx<50M]/bv*[filesize<=45M]+ba*[filesize<=5M]/bv*[vbr<=700]+ba/b";
     static YtDownloader()
     {
         LastUpdateOfYtDlp = new();
@@ -27,13 +27,12 @@ public static class YtDownloader
                                     .WithArguments(new[]
                                         {
                                             "--get-url", url
-                                            //,"--username", InstagramUserName
-                                            //, "--password", InstagramPassword
+                                            ,"-f", _ytdlpFormat
                                         }
                                     ).WithValidation(CommandResultValidation.None)
                                     .ExecuteBufferedAsync();
             if (urlResult.StandardOutput.Length > 0 &&
-                urlResult.StandardOutput.Split("\n").Length <= 2) //workarround for some providers (youtube shorts for ex) that has different tracks for video/sound
+                urlResult.StandardOutput.Split("\n").Length <= 2) //workarround for some providers (youtube shorts for ex) that has different tracks for video/sound, we need to force
             {
                 return new MediaDetails { Uri = new Uri(urlResult.StandardOutput.Replace("\n", "")), Type = MediaType.Video };
             }
@@ -46,6 +45,7 @@ public static class YtDownloader
                                 {
                                     //"-vU"
                                     "-O", "%(filesize,filesize_approx)s"
+                                    ,"-f", _ytdlpFormat
                                     ,"--add-header","User-Agent:facebookexternalhit/1.1"
                                     ,"--embed-metadata"
                                     ,"--exec" ,"echo"
@@ -71,6 +71,7 @@ public static class YtDownloader
                                 {
                                     //"-vU"
                                     "-o", fileName
+                                    ,"-f", _ytdlpFormat
                                     ,"--add-header","User-Agent:facebookexternalhit/1.1"
                                     ,"--embed-metadata"
                                     ,"--exec" ,"echo"
