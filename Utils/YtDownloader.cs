@@ -93,6 +93,11 @@ public static class YtDownloader
             Stream stream = File.OpenRead(fileName);
 
             log.LogInformation("downloaded video for url {url} size: {size}MB", url, stream.Length / 1024.0f / 1024.0f);
+            
+            if (stream.Length > _maxFileSize)
+            {
+                throw new InvalidOperationException("File too big");
+            }
 
             try
             {

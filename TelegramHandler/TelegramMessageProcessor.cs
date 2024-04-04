@@ -46,7 +46,8 @@ public static class TelegramMessageProcessor
                                     {
                                         inputFile = InputFile.FromUri(media.Uri);
                                     }
-                                    else if (media.Stream != null)
+                                    else if (media.Stream != null &&
+                                        media.Stream.Length <= 52428800) //50mb, limit of telegram bot
                                     {
                                         inputFile = InputFile.FromStream(media.Stream, Guid.NewGuid().ToString());
                                     }
