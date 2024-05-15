@@ -23,10 +23,10 @@ public class TwitterScraper : ScraperBase
     public override async Task<ScrapedData?> ExtractContentAsync(Uri url)
     {
         ScrapedData? scrapedData = await ExtractFromFXTwitter(url);
-        if (scrapedData == null || !scrapedData.IsValid())
-        {
-            scrapedData = await ExtractFromNitter(url);
-        }
+        //if (scrapedData == null || !scrapedData.IsValid())
+        //{
+        //    scrapedData = await ExtractFromNitter(url);
+        //}
         return scrapedData;
     }
 

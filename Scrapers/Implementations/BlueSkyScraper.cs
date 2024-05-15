@@ -19,7 +19,8 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory) : ScraperBase(
 
             ScrapedData scraped = new()
             {
-                Uri = postUrl
+                Uri = postUrl,
+                Type = ScrapedDataType.Text
             };
 
             string tweetContet = HttpUtility.HtmlDecode(metaNodes.
@@ -41,41 +42,23 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory) : ScraperBase(
                 .First()
                 .GetAttributeValue("content", ""));
 
-            switch (tweetType)
+
+            List<Uri> uriMedias = metaNodes
+             .Where(x => x.GetAttributeValue("property", null) == "og:image")
+             .Select(x => x.GetAttributeValue("content", null))
+             .Distinct()
+             .Select(x => new Uri(x, UriKind.Absolute))
+             .ToList();
+
+            if (uriMedias.Count > 0)
             {
-                //TO-DO VIDEO NOT AVAILABLE IN BLUESKY YET
-                //case "video":
-                //    scraped.Type = ScrapedDataType.Media;
-                //    Media? media = await YtDownloader.DownloadVideoFromUrlAsync(postUrl.AbsoluteUri, forceDownload);
-                //    if (media != null)
-                //    {
-                //        scraped.Medias = new List<Media>() { media };
-                //    }
-                //    break;
-
-                case "photo":
-                    scraped.Type = ScrapedDataType.Media;
-                    List<Uri> uriMedias = metaNodes
-                     .Where(x => x.GetAttributeValue("property", null) == "og:image" &&
-                     !x.GetAttributeValue("content", null).Contains("tw_video_thumb"))
-                     .Select(x => x.GetAttributeValue("content", null))
-                     .Distinct()
-                     .Select(x => new Uri(x, UriKind.Absolute))
-                     .ToList();
-
-                    if (uriMedias.Count > 0)
-                    {
-                        scraped.Medias = uriMedias
-                            .Select(x => new Media { Uri = x, Type = MediaType.Image })
-                            .ToList();
-                    }
-                    break;
-                case "article":
-                    scraped.Type = ScrapedDataType.Text;
-                    break;
-                default:
-                    break;
+                scraped.Medias = uriMedias
+                    .Select(x => new Media { Uri = x, Type = MediaType.Image })
+                    .ToList();
+                scraped.Type = ScrapedDataType.Media;
             }
+
+
             return scraped;
         }
         catch (Exception ex)

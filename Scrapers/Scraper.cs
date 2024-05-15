@@ -11,7 +11,7 @@ public class Scraper
 {
     private readonly InstagramScraper _instagramScraper;
     private readonly TwitterScraper _twitterScraper;
-    //private readonly BlueSkyScraper _blueSkyScraper;
+    private readonly BlueSkyScraper _blueSkyScraper;
     private readonly GenericScraper _genericScraper;
     protected readonly ILogger _logger;
     public Scraper(IHttpClientFactory httpClientFactory, AppSettings appSettings)
@@ -21,7 +21,7 @@ public class Scraper
         Guard.IsNotNull(appSettings.BibliogramInstances);
         _instagramScraper = new InstagramScraper(httpClientFactory, appSettings.BibliogramInstances);
         _twitterScraper = new TwitterScraper(httpClientFactory, appSettings.NitterInstances);
-        //_blueSkyScraper = new BlueSkyScraper(httpClientFactory);
+        _blueSkyScraper = new BlueSkyScraper(httpClientFactory);
         _genericScraper = new GenericScraper(httpClientFactory);
         _logger = ApplicationLogging.CreateLogger(GetType().Name);
     }
@@ -36,8 +36,8 @@ public class Scraper
                 ? await _twitterScraper.ExtractContentAsync(uri)
                 : uri.AbsoluteUri.Contains("instagram.com")
                 ? await _instagramScraper.ExtractContentAsync(uri)
-                //: uri.AbsoluteUri.Contains("bsky.app")
-                //? await _blueSkyScraper.ExtractContentAsync(uri, forceDownload)
+                : uri.AbsoluteUri.Contains("bsky.app")
+                ? await _blueSkyScraper.ExtractContentAsync(uri)
                 : await _genericScraper.ExtractContentAsync(uri);
         }
         else

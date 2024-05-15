@@ -44,8 +44,8 @@ public class ScrapedData : IDisposable
         }
 
 
-        return sb.Length > 1024 ?
-            sb.ToString()[..1023]
+        return sb.Length > 4096 ?
+            sb.ToString()[..4095]
             : sb.ToString();
 
     }
