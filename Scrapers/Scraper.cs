@@ -43,7 +43,7 @@ public class Scraper
         else
         {
             MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri, forceDownload);
-            return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = uri, Medias = [videoObj] } : null;
+            return videoObj != null ? new ScrapedData { Author = videoObj.Author, Content = videoObj.Content, Type = ScrapedDataType.Media, Uri = uri, Medias = [videoObj] } : null;
         }
     }
 }

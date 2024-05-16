@@ -13,7 +13,7 @@ public static class YtDownloader
                         "-U"
             ];
     private static readonly int _maxFileSize = 52428800; //about 50MB, current filesize limit for telegram bots https://core.telegram.org/bots/faq#how-do-i-upload-a-large-file
-    private static readonly string _ytdlpFormat = "bv*[filesize<=45M]+ba*[filesize<=5M]/bv*[vbr<=700]+ba/b*[filesize<50M]/b*[filesize_approx<50M]/b";
+    private static readonly string _ytdlpFormat = "bv*[filesize<=45M]+ba[filesize<=5M]/bv*[filesize_approx<=45M]+ba[filesize_approx<=5M]/bv*[vbr<=700]+ba/b*[filesize<50M]/b*[filesize_approx<50M]/b";
     static YtDownloader()
     {
         LastUpdateOfYtDlp = new();
@@ -93,7 +93,7 @@ public static class YtDownloader
             Stream stream = File.OpenRead(fileName);
 
             log.LogInformation("downloaded video for url {url} size: {size}MB", url, stream.Length / 1024.0f / 1024.0f);
-            
+
             if (stream.Length > _maxFileSize)
             {
                 throw new InvalidOperationException("File too big");
@@ -104,10 +104,19 @@ public static class YtDownloader
                 FileInfo fi = new(fileName);
 
                 TagLib.File tfile = TagLib.File.Create(fileName, $"video/{fi.Extension.Replace(".", string.Empty)}", TagLib.ReadStyle.Average);
+                string? description, author;
+                if (tfile.TagTypes == TagLib.TagTypes.Matroska)
+                {
+                    Dictionary<string, List<TagLib.Matroska.SimpleTag>> simpleTags = ((TagLib.Matroska.Tag)tfile.GetTag(TagLib.TagTypes.Matroska)).SimpleTags;
+                    description = simpleTags["DESCRIPTION"]?.FirstOrDefault()?.Value?.ToString();
+                    author = simpleTags["ARTIST"]?.FirstOrDefault()?.Value?.ToString();
+                }
+                else
+                {
+                    description = tfile.Tag?.Description;
+                    author = tfile.Tag?.FirstPerformer;
+                }
 
-                string? description = tfile.Tag.Description;
-                string? title = tfile.Tag.Title;
-                string? author = tfile.Tag.Performers?.FirstOrDefault();
                 return new MediaDetails()
                 {
                     Stream = stream,

@@ -35,7 +35,7 @@ public static class TelegramMessageProcessor
                             if (data.Medias.Count != 0)
                             {
                                 List<IAlbumInputMedia> albumMedia = [];
-                                foreach (Media media in data.Medias)
+                                foreach (Media? media in data.Medias)
                                 {
                                     ChatAction chatAction = media.Type == MediaType.Video ? ChatAction.UploadVideo : ChatAction.UploadPhoto;
 

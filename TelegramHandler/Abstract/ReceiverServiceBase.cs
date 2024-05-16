@@ -1,6 +1,5 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Polling;
-using Telegram.Bot.Types.Enums;
 
 namespace TelegramMediaGrabberBot.TelegramHandler.Abstract;
 
@@ -29,7 +28,7 @@ public abstract class ReceiverServiceBase<TUpdateHandler>(
         {
             ReceiverOptions receiverOptions = new()
             {
-                AllowedUpdates = Array.Empty<UpdateType>(),
+                AllowedUpdates = [],
                 ThrowPendingUpdates = true,
             };
 
