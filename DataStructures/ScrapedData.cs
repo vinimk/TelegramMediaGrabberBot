@@ -16,7 +16,7 @@ public class ScrapedData : IDisposable
         Medias = [];
     }
 
-    public string GetTelegramFormatedText(bool isSpoiler = false)
+    public string GetTelegramFormatedText(bool isSpoiler = false, bool isCaption = false)
     {
 
         StringBuilder sb = new();
@@ -43,11 +43,11 @@ public class ScrapedData : IDisposable
             _ = sb.Append("</span>");
         }
 
+        int maxLength = isCaption ? 1024 : 4096;
 
-        return sb.Length > 4096 ?
-            sb.ToString()[..4095]
+        return sb.Length > maxLength ?
+            sb.ToString()[..(maxLength - 1)]
             : sb.ToString();
-
     }
 
     public bool IsValid()

@@ -62,7 +62,7 @@ public static class TelegramMessageProcessor
                                     //workarround for showing the caption below the album, only add it to the first message.
                                     if (media == data.Medias.First())
                                     {
-                                        ((InputMedia)inputMedia).Caption = data.GetTelegramFormatedText(isSpoiler);
+                                        ((InputMedia)inputMedia).Caption = data.GetTelegramFormatedText(isSpoiler, isCaption: true);
                                         ((InputMedia)inputMedia).ParseMode = ParseMode.Html;
                                     }
                                     albumMedia.Add(inputMedia);
@@ -86,7 +86,7 @@ public static class TelegramMessageProcessor
                         }
                         break;
                     case ScrapedDataType.Text:
-                        _ = await botClient.SendTextMessageAsync(chatId: message.Chat, messageThreadId: messageThreadId, text: data.GetTelegramFormatedText(isSpoiler), parseMode: ParseMode.Html, cancellationToken: cancellationToken);
+                        _ = await botClient.SendTextMessageAsync(chatId: message.Chat, messageThreadId: messageThreadId, text: data.GetTelegramFormatedText(isSpoiler, isCaption: false), parseMode: ParseMode.Html, cancellationToken: cancellationToken);
                         break;
                 }
             }
