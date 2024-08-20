@@ -24,11 +24,11 @@ public static class YtDownloader
         if (forceDownload == false) //only use the getURL method if ForceDownload is disabled
         {
             BufferedCommandResult urlResult = await Cli.Wrap("yt-dlp")
-                                    .WithArguments(new[]
-                                        {
+                                    .WithArguments(
+                                        [
                                             "--get-url", url
                                             ,"-f", _ytdlpFormat
-                                        }
+                                        ]
                                     ).WithValidation(CommandResultValidation.None)
                                     .ExecuteBufferedAsync();
             if (urlResult.StandardOutput.Length > 0 &&
@@ -41,8 +41,8 @@ public static class YtDownloader
 
         //first check for the filesize 
         BufferedCommandResult dlFileSize = await Cli.Wrap("yt-dlp")
-                                .WithArguments(new[]
-                                {
+                                .WithArguments(
+                                [
                                     //"-vU"
                                     "-O", "%(filesize,filesize_approx)s"
                                     ,"-f", _ytdlpFormat
@@ -50,7 +50,7 @@ public static class YtDownloader
                                     ,"--embed-metadata"
                                     ,"--exec" ,"echo"
                                     , url
-                                }
+                                ]
                                 ).WithValidation(CommandResultValidation.None)
                                 .ExecuteBufferedAsync();
 
@@ -65,8 +65,8 @@ public static class YtDownloader
 
         string fileName = $"tmp/{Guid.NewGuid()}.mp4";
         BufferedCommandResult dlResult = await Cli.Wrap("yt-dlp")
-                                .WithArguments(new[]
-                                {
+                                .WithArguments(
+                                [
                                     //"-vU"
                                     "-o", fileName
                                     ,"-f", _ytdlpFormat
@@ -75,7 +75,7 @@ public static class YtDownloader
                                     ,"--embed-metadata"
                                     ,"--exec" ,"echo"
                                     , url
-                                }
+                                ]
                                 ).WithValidation(CommandResultValidation.None)
                                 .ExecuteBufferedAsync();
 

@@ -130,4 +130,10 @@ public partial class TelegramUpdateHandler : IUpdateHandler
         await Task.Delay(400, cancellationToken);
         _ = await botClient.SendTextMessageAsync(message.Chat, "POOOOOWW", cancellationToken: cancellationToken);
     }
+
+    public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
+    {
+        _logger.LogError(exception, "handle error async");
+        return Task.CompletedTask;
+    }
 }

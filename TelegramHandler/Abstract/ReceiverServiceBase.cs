@@ -29,7 +29,7 @@ public abstract class ReceiverServiceBase<TUpdateHandler>(
             ReceiverOptions receiverOptions = new()
             {
                 AllowedUpdates = [],
-                ThrowPendingUpdates = true,
+                DropPendingUpdates = true,
             };
 
             Telegram.Bot.Types.User me = await _botClient.GetMeAsync(stoppingToken);

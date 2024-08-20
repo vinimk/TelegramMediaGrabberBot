@@ -13,13 +13,12 @@ public static class TelegramMessageProcessor
     {
         try
         {
-            int? messageThreadId = message.IsTopicMessage is not null &&
-                message.IsTopicMessage == true &&
+            int? messageThreadId = message.IsTopicMessage == true &&
                 message.MessageThreadId is not null and > 0
                 ? message.MessageThreadId
                 : null;
 
-            _ = botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: messageThreadId, chatAction: ChatAction.Typing, cancellationToken: cancellationToken);
+            _ = botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: messageThreadId, action: ChatAction.Typing, cancellationToken: cancellationToken);
 
             using ScrapedData? data = await scrapper.GetScrapedDataFromUrlAsync(uri, forceDownload);
 
@@ -39,7 +38,7 @@ public static class TelegramMessageProcessor
                                 {
                                     ChatAction chatAction = media.Type == MediaType.Video ? ChatAction.UploadVideo : ChatAction.UploadPhoto;
 
-                                    _ = botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: messageThreadId, chatAction: chatAction, cancellationToken: cancellationToken);
+                                    _ = botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: messageThreadId, action: chatAction, cancellationToken: cancellationToken);
 
                                     InputFile inputFile;
                                     if (media.Uri != null)
