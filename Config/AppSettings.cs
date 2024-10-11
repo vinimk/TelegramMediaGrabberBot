@@ -1,6 +1,6 @@
 ﻿namespace TelegramMediaGrabberBot.Config;
 
-public class AppSettings
+public record AppSettings
 {
     public TelegramBotConfig? TelegramBotConfig { get; set; }
     public List<long?>? WhitelistedGroups { get; set; }
@@ -8,4 +8,5 @@ public class AppSettings
     public List<string>? NitterInstances { get; set; }
     public List<string>? BibliogramInstances { get; set; }
     public int? HoursBetweenBackgroundTask { get; set; }
+    public BlueSkyAuth? BlueSkyAuth { get; set; }
 }

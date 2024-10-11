@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Diagnostics;
 using TelegramMediaGrabberBot.Config;
-using TelegramMediaGrabberBot.Utils;
 
 namespace TelegramMediaGrabberBot.TelegramHandler.Abstract;
 
@@ -26,8 +25,6 @@ public abstract class PollingServiceBase<TReceiverService> : BackgroundService
         _logger = logger;
 
         ApplicationLogging.LoggerFactory = loggerFactory;
-
-        YtDownloader.UpdateYtDlpAsync().Wait();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

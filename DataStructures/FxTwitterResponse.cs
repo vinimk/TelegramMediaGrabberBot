@@ -2,7 +2,7 @@
 
 namespace TelegramMediaGrabberBot.DataStructures
 {
-    public class FxTwitterResponse
+    public record FxTwitterResponse
     {
         [JsonPropertyName("code")]
         public int? Code { get; set; }
@@ -12,7 +12,7 @@ namespace TelegramMediaGrabberBot.DataStructures
         public Tweet? Post { get; set; }
     }
 
-    public class All
+    public record All
     {
         [JsonPropertyName("type")]
         public string? Type { get; set; }
@@ -26,7 +26,7 @@ namespace TelegramMediaGrabberBot.DataStructures
         public string? AltText { get; set; }
     }
 
-    public class Author
+    public record Author
     {
         [JsonPropertyName("id")]
         public string? Id { get; set; }
@@ -42,7 +42,7 @@ namespace TelegramMediaGrabberBot.DataStructures
         public string? BannerUrl { get; set; }
     }
 
-    public class FxMedia
+    public record FxMedia
     {
         [JsonPropertyName("all")]
         public List<All>? All { get; set; }
@@ -52,7 +52,7 @@ namespace TelegramMediaGrabberBot.DataStructures
         public List<Video>? Videos { get; set; }
     }
 
-    public class Video
+    public record Video
     {
         [JsonPropertyName("type")]
         public string? Type { get; set; }
@@ -69,7 +69,7 @@ namespace TelegramMediaGrabberBot.DataStructures
     }
 
 
-    public class Photo
+    public record Photo
     {
         [JsonPropertyName("type")]
         public string? Type { get; set; }
@@ -85,7 +85,7 @@ namespace TelegramMediaGrabberBot.DataStructures
 
 
 
-    public class Tweet
+    public record Tweet
     {
         [JsonPropertyName("url")]
         public string? Url { get; set; }

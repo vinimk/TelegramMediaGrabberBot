@@ -30,6 +30,10 @@ IHost host = Host.CreateDefaultBuilder(args)
         int? hoursBetweenBackgroundTask = hostContext.Configuration.GetValue<int?>("HoursBetweenBackgroundTask");
         logger.LogInformation("HoursBetweenBackgroundTask {hoursBetweenBackgroundTask}", hoursBetweenBackgroundTask);
 
+        BlueSkyAuth? blueSkyAuth = configuration
+        .GetSection("BlueSkyAuth")
+        .Get<BlueSkyAuth>();
+
 
         AppSettings appSettings = new()
         {
@@ -39,6 +43,7 @@ IHost host = Host.CreateDefaultBuilder(args)
             BibliogramInstances = bibliogramInstances,
             SupportedWebSites = supportedWebSites,
             HoursBetweenBackgroundTask = hoursBetweenBackgroundTask,
+            BlueSkyAuth = blueSkyAuth
         };
 
         _ = services.AddSingleton<AppSettings>(appSettings);
