@@ -39,6 +39,8 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY ["TelegramMediaGrabberBot.csproj", "."]
 COPY ["nuget.config", "."]
+COPY ["./NuGet", "./NuGet"]
+
 RUN dotnet restore "./TelegramMediaGrabberBot.csproj"
 COPY . .
 WORKDIR "/src/."
