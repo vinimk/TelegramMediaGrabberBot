@@ -41,6 +41,12 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory, string userNam
 
         Result<ThreadPostViewFeed> result = await _atProtocol.Feed.GetPostThreadAsync(atUri, 0);
 
+        if (result.IsT1)
+        {
+            _logger.LogError("status code: {status}, details: {details}", result.AsT1.StatusCode, result.AsT1.Detail);
+            return null;
+        }
+
         PostView post = ((ThreadPostViewFeed)result.Value!).Thread.Post!;
 
         ScrapedData scrapedData = new()
