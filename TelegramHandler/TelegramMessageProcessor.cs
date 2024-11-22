@@ -18,7 +18,7 @@ public static class TelegramMessageProcessor
                 ? message.MessageThreadId
                 : null;
 
-            _ = botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: messageThreadId, action: ChatAction.Typing, cancellationToken: cancellationToken);
+            _ = botClient.SendChatAction(chatId: message.Chat, messageThreadId: messageThreadId, action: ChatAction.Typing, cancellationToken: cancellationToken);
 
             using ScrapedData? data = await scrapper.GetScrapedDataFromUrlAsync(uri, forceDownload);
 
@@ -38,7 +38,7 @@ public static class TelegramMessageProcessor
                                 {
                                     ChatAction chatAction = media.Type == MediaType.Video ? ChatAction.UploadVideo : ChatAction.UploadPhoto;
 
-                                    _ = botClient.SendChatActionAsync(chatId: message.Chat, messageThreadId: messageThreadId, action: chatAction, cancellationToken: cancellationToken);
+                                    _ = botClient.SendChatAction(chatId: message.Chat, messageThreadId: messageThreadId, action: chatAction, cancellationToken: cancellationToken);
 
                                     InputFile inputFile;
                                     if (media.Uri != null)
@@ -67,7 +67,7 @@ public static class TelegramMessageProcessor
                                     albumMedia.Add(inputMedia);
                                 }
 
-                                _ = await botClient.SendMediaGroupAsync(chatId: message.Chat, messageThreadId: messageThreadId, media: albumMedia, cancellationToken: cancellationToken);
+                                _ = await botClient.SendMediaGroup(chatId: message.Chat, messageThreadId: messageThreadId, media: albumMedia, cancellationToken: cancellationToken);
                             }
                             else
                             {
@@ -85,7 +85,7 @@ public static class TelegramMessageProcessor
                         }
                         break;
                     case ScrapedDataType.Text:
-                        _ = await botClient.SendTextMessageAsync(chatId: message.Chat, messageThreadId: messageThreadId, text: data.GetTelegramFormatedText(isSpoiler, isCaption: false), parseMode: ParseMode.Html, cancellationToken: cancellationToken);
+                        _ = await botClient.SendMessage(chatId: message.Chat, messageThreadId: messageThreadId, text: data.GetTelegramFormatedText(isSpoiler, isCaption: false), parseMode: ParseMode.Html, cancellationToken: cancellationToken);
                         break;
                 }
             }

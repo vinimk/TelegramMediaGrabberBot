@@ -32,7 +32,7 @@ public abstract class ReceiverServiceBase<TUpdateHandler>(
                 DropPendingUpdates = true,
             };
 
-            Telegram.Bot.Types.User me = await _botClient.GetMeAsync(stoppingToken);
+            Telegram.Bot.Types.User me = await _botClient.GetMe(stoppingToken);
             _logger.LogInformation("Start receiving updates for {BotName}", me.Username ?? "My Awesome Bot");
 
 

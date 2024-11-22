@@ -1,6 +1,6 @@
 #See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 
 RUN set -x && \
     apt update && \
@@ -35,19 +35,22 @@ RUN set -x && \
 
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 COPY ["TelegramMediaGrabberBot.csproj", "."]
 COPY ["nuget.config", "."]
 #COPY ["./NuGet", "./NuGet"]
 
 RUN dotnet restore "./TelegramMediaGrabberBot.csproj"
+
+ARG BUILD_CONFIGURATION=Release
 COPY . .
 WORKDIR "/src/."
-RUN dotnet build "TelegramMediaGrabberBot.csproj" -c Release -o /app/build
+RUN dotnet build "TelegramMediaGrabberBot.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "TelegramMediaGrabberBot.csproj" -c Release -o /app/publish /p:UseAppHost=false
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "TelegramMediaGrabberBot.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app

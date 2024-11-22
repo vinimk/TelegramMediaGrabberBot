@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net9.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UserSecretsId>dotnet-TelegramMediaGrabberBot-38672D23-487F-4A5E-9E69-99F5E2C220CE</UserSecretsId>
@@ -13,18 +13,18 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="CliWrap" Version="3.6.6" />
+		<PackageReference Include="CliWrap" Version="3.6.7" />
 		<PackageReference Include="CommunityToolkit.Diagnostics" Version="8.3.2" />
-		<PackageReference Include="FishyFlip" Version="2.0.0-alpha.53" />
-		<PackageReference Include="HtmlAgilityPack" Version="1.11.67" />
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
-		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
-		<PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.10" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+		<PackageReference Include="FishyFlip" Version="2.1.1" />
+		<PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Http.Polly" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="TagLibSharp" Version="2.3.0" />
-		<PackageReference Include="Telegram.Bot" Version="21.11.0" />
+		<PackageReference Include="Telegram.Bot" Version="22.1.2" />
 	</ItemGroup>
 
 	<ItemGroup>

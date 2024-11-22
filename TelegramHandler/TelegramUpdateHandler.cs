@@ -33,7 +33,6 @@ public partial class TelegramUpdateHandler : IUpdateHandler
         _supportedWebSites = appSettings.SupportedWebSites;
     }
 
-
     public async Task HandleUpdateAsync(ITelegramBotClient _, Update update, CancellationToken cancellationToken)
     {
         Task handler = update switch
@@ -86,18 +85,6 @@ public partial class TelegramUpdateHandler : IUpdateHandler
                 };
             }
 
-            //if (_whitelistedGroups != null &&
-            //    _whitelistedGroups.Any() &&
-            //    !_whitelistedGroups.Contains(message.Chat.Id))
-            //{
-            //    string? notAllowedMessage = Properties.Resources.ResourceManager.GetString("GroupNotAllowed");
-            //    if (!string.IsNullOrEmpty(notAllowedMessage))
-            //    {
-            //        _ = await _botClient.SendTextMessageAsync(message.Chat, notAllowedMessage, cancellationToken: cancellationToken);
-            //        return;
-            //    }
-            //}
-
             foreach (Uri? uri in from Match match in LinkParser.Matches(messageText)
                                  let uri = new UriBuilder(match.Value).Uri
                                  select uri)
@@ -120,15 +107,15 @@ public partial class TelegramUpdateHandler : IUpdateHandler
 
     private static async Task SendRojao(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
     {
-        _ = await botClient.SendTextMessageAsync(message.Chat, "pra pra", cancellationToken: cancellationToken);
+        _ = await botClient.SendMessage(message.Chat, "pra pra", cancellationToken: cancellationToken);
         await Task.Delay(200, cancellationToken);
-        _ = await botClient.SendTextMessageAsync(message.Chat, "pra", cancellationToken: cancellationToken);
+        _ = await botClient.SendMessage(message.Chat, "pra", cancellationToken: cancellationToken);
         await Task.Delay(100, cancellationToken);
-        _ = await botClient.SendTextMessageAsync(message.Chat, "pra", cancellationToken: cancellationToken);
+        _ = await botClient.SendMessage(message.Chat, "pra", cancellationToken: cancellationToken);
         await Task.Delay(100, cancellationToken);
-        _ = await botClient.SendTextMessageAsync(message.Chat, "pra pra pra pra pra", cancellationToken: cancellationToken);
+        _ = await botClient.SendMessage(message.Chat, "pra pra pra pra pra", cancellationToken: cancellationToken);
         await Task.Delay(400, cancellationToken);
-        _ = await botClient.SendTextMessageAsync(message.Chat, "POOOOOWW", cancellationToken: cancellationToken);
+        _ = await botClient.SendMessage(message.Chat, "POOOOOWW", cancellationToken: cancellationToken);
     }
 
     public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
