@@ -1,5 +1,7 @@
 ﻿using CommunityToolkit.Diagnostics;
 using FishyFlip;
+using FishyFlip.Lexicon.App.Bsky.Embed;
+using FishyFlip.Lexicon.App.Bsky.Feed;
 using FishyFlip.Models;
 using Microsoft.Extensions.Logging.Debug;
 using TelegramMediaGrabberBot.DataStructures;
@@ -25,7 +27,7 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory, string userNam
                 // Defaults to bsky.social.
                 .WithLogger(debugLog.CreateLogger("FishyFlipDebug"));
             _atProtocol = atProtocolBuilder.Build();
-            _ = await _atProtocol.AuthenticateWithPasswordAsync(userName, password);
+            _ = await _atProtocol.AuthenticateWithPasswordResultAsync(userName, password);
         }
 
         string user = postUrl.Segments[2];
@@ -39,7 +41,7 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory, string userNam
         string url = $"at://{user}app.bsky.feed.post/{rkey}";
         ATUri atUri = new(url);
 
-        Result<ThreadPostViewFeed> result = await _atProtocol.Feed.GetPostThreadAsync(atUri, 0);
+        Result<GetPostThreadOutput?> result = await _atProtocol.Feed.GetPostThreadAsync(atUri, 0);
 
         if (result.IsT1)
         {
@@ -47,30 +49,30 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory, string userNam
             return null;
         }
 
-        PostView post = ((ThreadPostViewFeed)result.Value!).Thread.Post!;
+        PostView post = ((ThreadViewPost)((GetPostThreadOutput)result.Value!).Thread!).Post!;
 
         ScrapedData scrapedData = new()
         {
             Type = ScrapedDataType.Text,
-            Content = post.Record?.Text,
-            Author = post.Author.DisplayName,
+            Content = post.PostRecord!.Text,
+            Author = post.Author!.DisplayName,
             Uri = postUrl
         };
 
-        if (post.Embed is ImageViewEmbed images)
+        if (post.Embed is ViewImages images)
         {
             scrapedData.Type = ScrapedDataType.Media;
-            foreach (ImageView image in images.Images)
+            foreach (ViewImage image in images.Images!)
             {
                 Media media = new()
                 {
                     Type = MediaType.Image,
-                    Uri = new Uri(image.Fullsize)
+                    Uri = new Uri(image.Fullsize!)
                 };
                 scrapedData.Medias.Add(media);
             }
         }
-        else if (post.Embed is VideoViewEmbed video)
+        else if (post.Embed is ViewVideo video)
         {
             scrapedData.Type = ScrapedDataType.Media;
             MediaDetails? mediaDetails = await YtDownloader.DownloadVideoFromUrlAsync(video.Playlist!, true);
@@ -84,22 +86,22 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory, string userNam
                 scrapedData.Medias.Add(media);
             }
         }
-        else if (post.Embed is RecordWithMediaViewEmbed record)
+        else if (post.Embed is ViewRecordWithMedia record)
         {
             scrapedData.Type = ScrapedDataType.Media;
-            if (record.Embed is ImageViewEmbed embedImages)
+            if (record.Media is ViewImages embedImages)
             {
-                foreach (ImageView image in embedImages.Images)
+                foreach (ViewImage image in embedImages.Images!)
                 {
                     Media media = new()
                     {
                         Type = MediaType.Image,
-                        Uri = new Uri(image.Fullsize)
+                        Uri = new Uri(image.Fullsize!)
                     };
                     scrapedData.Medias.Add(media);
                 }
             }
-            else if (record.Embed is VideoViewEmbed embedVideo)
+            else if (record.Media is ViewVideo embedVideo)
             {
                 MediaDetails? mediaDetails = await YtDownloader.DownloadVideoFromUrlAsync(embedVideo.Playlist!, true);
                 if (mediaDetails != null)
