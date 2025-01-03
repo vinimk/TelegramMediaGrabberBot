@@ -11,11 +11,16 @@ public class InstagramScraper : ScraperBase
 {
 
     private readonly List<string> _bibliogramInstances;
-    public InstagramScraper(IHttpClientFactory httpClientFactory, List<string> bibliogramInstances)
+    private readonly string? _userName;
+    private readonly string? _password;
+
+    public InstagramScraper(IHttpClientFactory httpClientFactory, List<string> bibliogramInstances, string? userName = null, string? password = null)
         : base(httpClientFactory)
     {
         Guard.IsNotNull(bibliogramInstances);
         _bibliogramInstances = bibliogramInstances;
+        _userName = userName;
+        _password = password;
     }
 
     public override async Task<ScrapedData?> ExtractContentAsync(Uri instagramUrl)
@@ -27,7 +32,7 @@ public class InstagramScraper : ScraperBase
 
             if (scrapedData == null || !scrapedData.IsValid())
             {
-                MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri);
+                MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri, username: _userName, password: _password);
                 return videoObj != null ? new ScrapedData { Type = ScrapedDataType.Media, Uri = instagramUrl, Medias = [videoObj] } : null;
             }
         }
@@ -47,6 +52,10 @@ public class InstagramScraper : ScraperBase
 
         // get a Uri instance from the UriBuilder
         string newUrl = await HttpUtils.GetRealUrlFromMoved(newUriBuilder.Uri.AbsoluteUri);
+        if (newUrl == instagramUrl.AbsoluteUri)
+        {
+            return null;
+        }
 
         try
         {
@@ -95,8 +104,10 @@ public class InstagramScraper : ScraperBase
                 {
                     string videoUrl = videoNode.GetAttributeValue("content", "");
                     scraped.Type = ScrapedDataType.Media;
-
-                    videoUrl = $"https://{host}{videoUrl}";
+                    if (!videoUrl.StartsWith("https://"))
+                    {
+                        videoUrl = $"https://{host}{videoUrl}";
+                    }
                     scraped.Medias.Add(new Media { Type = MediaType.Video, Uri = new Uri(videoUrl) });
                 }
                 else
@@ -109,7 +120,10 @@ public class InstagramScraper : ScraperBase
                     {
                         string imageUrl = imageNode.GetAttributeValue("content", "");
                         scraped.Type = ScrapedDataType.Media;
-
+                        if (!imageUrl.StartsWith("https://"))
+                        {
+                            imageUrl = $"https://{host}{imageUrl}";
+                        }
                         imageUrl = $"https://{host}{imageUrl}";
                         scraped.Medias.Add(new Media { Type = MediaType.Image, Uri = new Uri(imageUrl) });
                     }

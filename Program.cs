@@ -34,6 +34,10 @@ IHost host = Host.CreateDefaultBuilder(args)
         .GetSection("BlueSkyAuth")
         .Get<BlueSkyAuth>();
 
+        InstagramAuth? instagramAuth = configuration
+        .GetSection("InstagramAuth")
+        .Get<InstagramAuth>();
+
 
         AppSettings appSettings = new()
         {
@@ -43,7 +47,8 @@ IHost host = Host.CreateDefaultBuilder(args)
             BibliogramInstances = bibliogramInstances,
             SupportedWebSites = supportedWebSites,
             HoursBetweenBackgroundTask = hoursBetweenBackgroundTask,
-            BlueSkyAuth = blueSkyAuth
+            BlueSkyAuth = blueSkyAuth,
+            InstagramAuth = instagramAuth
         };
 
         _ = services.AddSingleton<AppSettings>(appSettings);

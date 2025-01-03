@@ -19,18 +19,28 @@ public static class YtDownloader
         LastUpdateOfYtDlp = new();
     }
 
-    public static async Task<MediaDetails?> DownloadVideoFromUrlAsync(string url, bool forceDownload = false, bool updatedYtDl = false)
+    public static async Task<MediaDetails?> DownloadVideoFromUrlAsync(string url, bool forceDownload = false, bool updatedYtDl = false, string? username = null, string? password = null)
     {
+        string[] argumentsAuth = [];
+
+        if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
+        {
+            argumentsAuth = ["--username", username, "--password", password];
+        }
+
         if (forceDownload == false) //only use the getURL method if ForceDownload is disabled
         {
-            BufferedCommandResult urlResult = await Cli.Wrap("yt-dlp")
-                                    .WithArguments(
-                                        [
-                                            "--get-url", url
+            string[] argumentsGetUrl = [..argumentsAuth,
+                                        "--get-url", url
                                             ,"-f", _ytdlpFormat
-                                        ]
-                                    ).WithValidation(CommandResultValidation.None)
+                                        ];
+
+            BufferedCommandResult urlResult = await Cli.Wrap("yt-dlp")
+                                    .WithArguments(argumentsGetUrl)
+                                    .WithValidation(CommandResultValidation.None)
                                     .ExecuteBufferedAsync();
+
+
             if (urlResult.StandardOutput.Length > 0 &&
                 urlResult.StandardOutput.Split("\n").Length <= 2) //workarround for some providers (youtube shorts for ex) that has different tracks for video/sound, we need to force
             {
@@ -40,18 +50,20 @@ public static class YtDownloader
 
 
         //first check for the filesize 
-        BufferedCommandResult dlFileSize = await Cli.Wrap("yt-dlp")
-                                .WithArguments(
-                                [
-                                    //"-vU"
-                                    "-O", "%(filesize,filesize_approx)s"
+
+        List<string> argumentsFileSize = [//"-vU"
+                                    ..argumentsAuth
+                                    ,"-O", "%(filesize,filesize_approx)s"
                                     ,"-f", _ytdlpFormat
                                     ,"--add-header","User-Agent:facebookexternalhit/1.1"
                                     ,"--embed-metadata"
                                     ,"--exec" ,"echo"
                                     , url
-                                ]
-                                ).WithValidation(CommandResultValidation.None)
+                                    ];
+
+        BufferedCommandResult dlFileSize = await Cli.Wrap("yt-dlp")
+                                .WithArguments(argumentsFileSize)
+                                .WithValidation(CommandResultValidation.None)
                                 .ExecuteBufferedAsync();
 
         if (dlFileSize.StandardOutput.Length > 0) //workarround for some providers (ie tiktok that return weird separated filenames)
@@ -64,9 +76,9 @@ public static class YtDownloader
         }
 
         string fileName = $"tmp/{Guid.NewGuid()}.mp4";
-        BufferedCommandResult dlResult = await Cli.Wrap("yt-dlp")
-                                .WithArguments(
-                                [
+
+        IEnumerable<string> arguments = [
+                                    ..argumentsAuth,
                                     //"-vU"
                                     "-o", fileName
                                     ,"-f", _ytdlpFormat
@@ -75,8 +87,10 @@ public static class YtDownloader
                                     ,"--embed-metadata"
                                     ,"--exec" ,"echo"
                                     , url
-                                ]
-                                ).WithValidation(CommandResultValidation.None)
+                                ];
+
+        BufferedCommandResult dlResult = await Cli.Wrap("yt-dlp")
+                                .WithArguments(arguments).WithValidation(CommandResultValidation.None)
                                 .ExecuteBufferedAsync();
 
         if (dlResult.StandardOutput.Length > 0) //workarround for some providers (ie tiktok that return weird separated filenames)
@@ -144,7 +158,6 @@ public static class YtDownloader
                 if (DateTime.Compare(LastUpdateOfYtDlp, DateTime.Now.AddDays(-1)) < 0) //update only once a day
                 {
                     LastUpdateOfYtDlp = DateTime.Now;
-
 
                     await UpdateYtDlpAsync();
 

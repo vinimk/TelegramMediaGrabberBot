@@ -19,8 +19,19 @@ public class Scraper
         Guard.IsNotNull(appSettings);
         Guard.IsNotNull(appSettings.NitterInstances);
         Guard.IsNotNull(appSettings.BibliogramInstances);
-        _instagramScraper = new InstagramScraper(httpClientFactory, appSettings.BibliogramInstances);
         _twitterScraper = new TwitterScraper(httpClientFactory, appSettings.NitterInstances);
+
+        if (appSettings.InstagramAuth != null)
+        {
+            Guard.IsNotNullOrWhiteSpace(appSettings.InstagramAuth.UserName);
+            Guard.IsNotNullOrWhiteSpace(appSettings.InstagramAuth.Password);
+            _instagramScraper = new InstagramScraper(httpClientFactory, appSettings.BibliogramInstances, userName: appSettings.InstagramAuth.UserName, password: appSettings.InstagramAuth.Password);
+        }
+        else
+        {
+            _instagramScraper = new InstagramScraper(httpClientFactory, appSettings.BibliogramInstances);
+        }
+
         if (appSettings.BlueSkyAuth != null)
         {
             Guard.IsNotNullOrWhiteSpace(appSettings.BlueSkyAuth.UserName);

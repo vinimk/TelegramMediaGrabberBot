@@ -9,4 +9,5 @@ public record AppSettings
     public List<string>? BibliogramInstances { get; set; }
     public int? HoursBetweenBackgroundTask { get; set; }
     public BlueSkyAuth? BlueSkyAuth { get; set; }
+    public InstagramAuth? InstagramAuth { get; set; }
 }

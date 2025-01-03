@@ -2,11 +2,8 @@
 using FishyFlip;
 using FishyFlip.Lexicon.App.Bsky.Embed;
 using FishyFlip.Lexicon.App.Bsky.Feed;
-using FishyFlip.Lexicon.App.Netlify.Aniblue;
 using FishyFlip.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Debug;
-using System.Net;
 using TelegramMediaGrabberBot.DataStructures;
 using TelegramMediaGrabberBot.DataStructures.Medias;
 using TelegramMediaGrabberBot.Utils;

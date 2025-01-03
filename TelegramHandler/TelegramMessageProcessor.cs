@@ -74,9 +74,9 @@ public static class TelegramMessageProcessor
                                 throw new Exception();
                             }
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            logger.LogError("{uri} error, trying forceDownload", uri.AbsoluteUri);
+                            logger.LogError(ex, "{uri} error, trying forceDownload", uri.AbsoluteUri);
 
                             if (forceDownload == false)
                             {
