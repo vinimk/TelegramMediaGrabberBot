@@ -55,7 +55,7 @@ public abstract class PollingServiceBase<TReceiverService> : BackgroundService
             // see: https://github.com/TelegramBots/Telegram.Bot/issues/1106
             catch (Exception ex)
             {
-                _logger.LogError("Polling failed with exception: {Exception}", ex);
+                _logger.LogError(ex, "Polling failed with exception");
 
                 // Cooldown if something goes wrong
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);

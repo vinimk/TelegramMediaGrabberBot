@@ -87,5 +87,5 @@ try
 }
 catch (Exception ex)
 {
-    ApplicationLogging.CreateLogger("Program.cs").LogError("program.cs error {ex}", ex);
+    ApplicationLogging.CreateLogger("Program.cs").LogError(ex, "program.cs error");
 }
