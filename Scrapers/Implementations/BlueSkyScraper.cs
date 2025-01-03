@@ -126,4 +126,3 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory, string userNam
         return scrapedData;
     }
 }
-}
