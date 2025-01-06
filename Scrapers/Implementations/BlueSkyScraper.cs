@@ -3,7 +3,6 @@ using FishyFlip;
 using FishyFlip.Lexicon.App.Bsky.Embed;
 using FishyFlip.Lexicon.App.Bsky.Feed;
 using FishyFlip.Models;
-using Microsoft.Extensions.Logging.Debug;
 using TelegramMediaGrabberBot.DataStructures;
 using TelegramMediaGrabberBot.DataStructures.Medias;
 using TelegramMediaGrabberBot.Utils;
@@ -19,13 +18,12 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory, string userNam
         {
             Guard.IsNotNullOrWhiteSpace(userName);
             Guard.IsNotNullOrWhiteSpace(password);
-            // Include a ILogger if you want additional logging from the base library.
-            DebugLoggerProvider debugLog = new();
+
             ATProtocolBuilder atProtocolBuilder = new ATProtocolBuilder()
                 .EnableAutoRenewSession(true)
                 // Set the instance URL for the PDS you wish to connect to.
                 // Defaults to bsky.social.
-                .WithLogger(debugLog.CreateLogger("FishyFlipDebug"));
+                .WithLogger(_logger);
             _atProtocol = atProtocolBuilder.Build();
             _ = await _atProtocol.AuthenticateWithPasswordResultAsync(userName, password);
         }
@@ -42,18 +40,6 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory, string userNam
         ATUri atUri = new(url);
 
         Result<GetPostThreadOutput?> result = await _atProtocol.Feed.GetPostThreadAsync(atUri, 0);
-
-        if (result.IsT1)
-        {
-            if (result.AsT1.Detail!.Message!.Contains("ExpiredToken")) //workarround, if error is expired token, just invalidate the protocol to recreate
-            {
-                _atProtocol = null;
-                return await ExtractContentAsync(postUrl);
-            }
-            _logger.LogError("status code: {status}, details: {details}", result.AsT1.StatusCode, result.AsT1.Detail);
-            return null;
-        }
-
         PostView post = ((ThreadViewPost)((GetPostThreadOutput)result.Value!).Thread!).Post!;
 
         ScrapedData scrapedData = new()
