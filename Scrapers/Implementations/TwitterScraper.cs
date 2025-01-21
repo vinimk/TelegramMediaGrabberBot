@@ -1,10 +1,7 @@
 ﻿using CommunityToolkit.Diagnostics;
-using HtmlAgilityPack;
 using System.Net.Http.Json;
-using System.Web;
 using TelegramMediaGrabberBot.DataStructures;
 using TelegramMediaGrabberBot.DataStructures.Medias;
-using TelegramMediaGrabberBot.Utils;
 using Media = TelegramMediaGrabberBot.DataStructures.Medias.Media;
 
 namespace TelegramMediaGrabberBot.Scrapers.Implementations;
@@ -23,10 +20,6 @@ public class TwitterScraper : ScraperBase
     public override async Task<ScrapedData?> ExtractContentAsync(Uri url)
     {
         ScrapedData? scrapedData = await ExtractFromFXTwitter(url);
-        //if (scrapedData == null || !scrapedData.IsValid())
-        //{
-        //    scrapedData = await ExtractFromNitter(url);
-        //}
         return scrapedData;
     }
 
@@ -107,99 +100,4 @@ public class TwitterScraper : ScraperBase
     }
 
 
-    public async Task<ScrapedData?> ExtractFromNitter(Uri url)
-    {
-        foreach (string nitterInstance in _nitterInstances)
-        {
-            UriBuilder newUriBuilder = new(url)
-            {
-                Host = nitterInstance
-            };
-
-            // get a Uri instance from the UriBuilder
-            Uri newUri = newUriBuilder.Uri;
-            try
-            {
-                using HttpClient client = _httpClientFactory.CreateClient("default");
-                client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.0");
-                HttpResponseMessage response = await client.GetAsync(newUri.AbsoluteUri);
-                HtmlDocument doc = new();
-                doc.Load(await response.Content.ReadAsStreamAsync());
-                IEnumerable<HtmlNode> metaNodes = doc.DocumentNode.SelectSingleNode("//head").Descendants("meta");
-
-
-                ScrapedData scraped = new()
-                {
-                    Uri = url
-                };
-
-                string tweetContet = HttpUtility.HtmlDecode(metaNodes.
-                    Where(x => x.GetAttributeValue("property", null) == "og:description")
-                    .First()
-                    .GetAttributeValue("content", ""));
-
-                scraped.Content = tweetContet;
-
-                string tweetAuthor = HttpUtility.HtmlDecode(metaNodes.
-                    Where(x => x.GetAttributeValue("property", null) == "og:title")
-                    .First()
-                    .GetAttributeValue("content", ""));
-
-                scraped.Author = tweetAuthor;
-
-                string tweetType = HttpUtility.HtmlDecode(metaNodes.
-                    Where(x => x.GetAttributeValue("property", null) == "og:type")
-                    .First()
-                    .GetAttributeValue("content", ""));
-
-                switch (tweetType)
-                {
-                    case "video":
-                        scraped.Type = ScrapedDataType.Media;
-                        Media? media = await YtDownloader.DownloadVideoFromUrlAsync(url.AbsoluteUri);
-                        if (media != null)
-                        {
-                            scraped.Medias = [media];
-                        }
-                        break;
-
-                    case "photo":
-                        scraped.Type = ScrapedDataType.Media;
-                        List<Uri> uriMedias = metaNodes
-                         .Where(x => x.GetAttributeValue("property", null) == "og:image" &&
-                         !x.GetAttributeValue("content", null).Contains("tw_video_thumb"))
-                         .Select(x => x.GetAttributeValue("content", null))
-                         .Distinct()
-                         .Select(x => new Uri(x, UriKind.Absolute))
-                         .ToList();
-
-                        if (uriMedias.Count > 0)
-                        {
-                            scraped.Medias = uriMedias
-                                .Select(x => new Media { Uri = x, Type = MediaType.Image })
-                                .ToList();
-                        }
-                        break;
-                    case "article":
-                        scraped.Type = ScrapedDataType.Text;
-                        break;
-                    default:
-                        break;
-                }
-
-                if (scraped.Type == ScrapedDataType.Text && string.IsNullOrWhiteSpace(scraped.Content))
-                {
-                    //if the content is empty and the type is an article, the tweet was not scrapped right so we ignore it
-                    continue;
-                }
-
-                return scraped;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed for nitter instance {instance}", newUri.AbsoluteUri);
-            }//empty catch, if there is any issue with one nitter instance, it will go to the next one
-        }
-        return null;
-    }
 }
