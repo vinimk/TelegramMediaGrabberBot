@@ -94,7 +94,7 @@ public class TwitterScraper : ScraperBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed for fxtwitter");
+            _logger.LogInformation(ex, "Failed for fxtwitter");
         } //empty catch, if there is any issue with one nitter instance, it will go to the next one
         return null;
     }

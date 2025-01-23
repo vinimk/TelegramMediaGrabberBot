@@ -35,20 +35,17 @@ public class InstagramScraper : ScraperBase
 
     public async Task<ScrapedData?> ExtractFromDDInstagram(Uri instagramUrl)
     {
+        string realUrl = await HttpUtils.GetRealUrlFromMoved(instagramUrl.AbsoluteUri);
+
         string host = "ddinstagram.com";
-        UriBuilder newUriBuilder = new(instagramUrl)
+        UriBuilder newUriBuilder = new(realUrl)
         {
             Scheme = Uri.UriSchemeHttps,
             Host = host,
             Port = -1, //defualt port for schema
         };
 
-        // get a Uri instance from the UriBuilder
-        string newUrl = await HttpUtils.GetRealUrlFromMoved(newUriBuilder.Uri.AbsoluteUri);
-        if (newUrl == instagramUrl.AbsoluteUri)
-        {
-            return null;
-        }
+        string newUrl = newUriBuilder.Uri.AbsoluteUri;
 
         try
         {
@@ -117,7 +114,6 @@ public class InstagramScraper : ScraperBase
                         {
                             imageUrl = $"https://{host}{imageUrl}";
                         }
-                        imageUrl = $"https://{host}{imageUrl}";
                         scraped.Medias.Add(new Media { Type = MediaType.Image, Uri = new Uri(imageUrl) });
                     }
                 }
@@ -128,7 +124,7 @@ public class InstagramScraper : ScraperBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed for DDInstagram");
+            _logger.LogInformation(ex, "Failed for DDInstagram");
         } //empty catch, if there is any issue with one nitter instance, it will go to the next one
         return null;
     }

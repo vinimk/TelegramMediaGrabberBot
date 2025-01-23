@@ -79,8 +79,8 @@ IHost host = Host.CreateDefaultBuilder(args)
         //        .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(20)); ;
 
 
-        _ = services.AddScoped<TelegramUpdateHandler>();
-        _ = services.AddScoped<TelegramReceiverService>();
+        _ = services.AddSingleton<TelegramUpdateHandler>();
+        _ = services.AddSingleton<TelegramReceiverService>();
 
         _ = services.AddHostedService<TelegramPollingService>();
     })

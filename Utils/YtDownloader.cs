@@ -141,7 +141,7 @@ public static class YtDownloader
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "metadata extraction for {url}", url);
+                log.LogInformation(ex, "metadata extraction for {url}", url);
                 return new MediaDetails()
                 {
                     Stream = stream,
@@ -153,7 +153,7 @@ public static class YtDownloader
         {
             if (dlResult.StandardError.Length > 0) // if there is an error try and update yt-dl
             {
-                log.LogError("Error downloading: {buffer}", dlResult.StandardError.ToString());
+                log.LogInformation("Error downloading: {buffer}", dlResult.StandardError.ToString());
 
                 if (DateTime.Compare(LastUpdateOfYtDlp, DateTime.Now.AddDays(-1)) < 0) //update only once a day
                 {

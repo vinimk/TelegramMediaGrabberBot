@@ -67,7 +67,32 @@ public static class TelegramMessageProcessor
                                     albumMedia.Add(inputMedia);
                                 }
 
-                                _ = await botClient.SendMediaGroup(chatId: message.Chat, messageThreadId: messageThreadId, media: albumMedia, cancellationToken: cancellationToken);
+                                try
+                                {
+                                    _ = await botClient.SendMediaGroup(chatId: message.Chat, messageThreadId: messageThreadId, media: albumMedia, cancellationToken: cancellationToken);
+                                }
+                                catch (Exception)
+                                {
+                                    //workarround for telegram failing to download media directly
+                                    logger.LogInformation("Telegram download fail, trying direct download of media before sending to telegram url:{url}", uri);
+
+                                    albumMedia.Clear();
+
+                                    foreach (Media? media in data.Medias.Where(x => x.Type == MediaType.Video)) //only try to force for videos for now
+                                    {
+                                        Task<Stream?> stream = Utils.HttpUtils.GetStreamFromUrl(media.Uri!);
+                                        InputFileStream inputFile = InputFile.FromStream(media.Stream!, Guid.NewGuid().ToString());
+                                        InputMediaVideo inputMedia = new(inputFile)
+                                        {
+                                            HasSpoiler = isSpoiler,
+                                            Caption = data.GetTelegramFormatedText(isSpoiler, isCaption: true),
+                                            ParseMode = ParseMode.Html
+                                        };
+                                        albumMedia.Add(inputMedia);
+                                    }
+
+                                    _ = await botClient.SendMediaGroup(chatId: message.Chat, messageThreadId: messageThreadId, media: albumMedia, cancellationToken: cancellationToken);
+                                }
                             }
                             else
                             {
@@ -76,7 +101,7 @@ public static class TelegramMessageProcessor
                         }
                         catch (Exception ex)
                         {
-                            logger.LogError(ex, "{uri} error, trying forceDownload", uri.AbsoluteUri);
+                            logger.LogInformation(ex, "{uri} error, trying forceDownload", uri.AbsoluteUri);
 
                             if (forceDownload == false)
                             {

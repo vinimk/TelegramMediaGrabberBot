@@ -47,7 +47,10 @@ public class Scraper
     {
         if (forceDownload == false)
         {
-            return uri.Host switch
+            //removes www. from the host
+            string host = uri.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? uri.Host[4..] : uri.Host;
+
+            return host switch
             {
                 "twitter.com" or "fxtwitter.com" or "x.com" => await _twitterScraper.ExtractContentAsync(uri),
                 "bsky.app" => await _blueSkyScraper!.ExtractContentAsync(uri),
