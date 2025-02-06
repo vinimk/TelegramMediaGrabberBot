@@ -22,7 +22,21 @@ public class InstagramScraper : ScraperBase
 
     public override async Task<ScrapedData?> ExtractContentAsync(Uri instagramUrl)
     {
-        ScrapedData? scrapedData = await ExtractFromDDInstagram(instagramUrl);
+        ScrapedData? scrapedData = null;
+
+        for (int i = 0; i < 4; i++) //try 4 times to get because sometimes after the first try ddinstagram gets the file
+        {
+            scrapedData = await ExtractFromDDInstagram(instagramUrl);
+            if(scrapedData != null)
+            {
+                return scrapedData;
+            }
+            else
+            {
+                await Task.Delay(1000);
+            }
+        }
+
         if (scrapedData == null || !scrapedData.IsValid())
         {
             MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri, username: _userName, password: _password);
