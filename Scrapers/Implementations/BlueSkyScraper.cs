@@ -33,7 +33,7 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory, string userNam
 
         if (rkey.EndsWith('/'))
         {
-            rkey = rkey.Remove(rkey.Length - 1, 1);
+            rkey = rkey[..^1];
         }
 
         string url = $"at://{user}app.bsky.feed.post/{rkey}";

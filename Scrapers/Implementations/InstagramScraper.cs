@@ -27,13 +27,13 @@ public class InstagramScraper : ScraperBase
         for (int i = 0; i < 4; i++) //try 4 times to get because sometimes after the first try ddinstagram gets the file
         {
             scrapedData = await ExtractFromDDInstagram(instagramUrl);
-            if(scrapedData != null)
+            if (scrapedData != null)
             {
                 return scrapedData;
             }
             else
             {
-                await Task.Delay(1000);
+                await Task.Delay(2000);
             }
         }
 
@@ -70,6 +70,9 @@ public class InstagramScraper : ScraperBase
 
 
             HttpResponseMessage response = await client.GetAsync(newUrl);
+
+            _logger.LogInformation(response.ToString());
+
             if (response.IsSuccessStatusCode)
             {
                 HtmlDocument doc = new();
