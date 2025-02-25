@@ -49,10 +49,8 @@ public class InstagramScraper : ScraperBase
 
     public async Task<ScrapedData?> ExtractFromDDInstagram(Uri instagramUrl)
     {
-        string realUrl = await HttpUtils.GetRealUrlFromMoved(instagramUrl.AbsoluteUri);
-
         string host = "ddinstagram.com";
-        UriBuilder newUriBuilder = new(realUrl)
+        UriBuilder newUriBuilder = new(instagramUrl.AbsoluteUri)
         {
             Scheme = Uri.UriSchemeHttps,
             Host = host,
@@ -70,6 +68,7 @@ public class InstagramScraper : ScraperBase
 
 
             HttpResponseMessage response = await client.GetAsync(newUrl);
+
             _logger.LogInformation("url {url}", newUrl);
             _logger.LogInformation("response {response}", response.ToString());
 
