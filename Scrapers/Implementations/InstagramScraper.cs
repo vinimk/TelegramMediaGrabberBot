@@ -70,8 +70,8 @@ public class InstagramScraper : ScraperBase
 
 
             HttpResponseMessage response = await client.GetAsync(newUrl);
-
-            _logger.LogInformation(response.ToString());
+            _logger.LogInformation("url {url}", newUrl);
+            _logger.LogInformation("response {response}", response.ToString());
 
             if (response.IsSuccessStatusCode)
             {
