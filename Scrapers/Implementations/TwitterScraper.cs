@@ -17,7 +17,7 @@ public class TwitterScraper : ScraperBase
         _nitterInstances = nitterInstances;
     }
 
-    public override async Task<ScrapedData?> ExtractContentAsync(Uri url)
+    public override async Task<ScrapedData?> ExtractContentAsync(Uri url, bool forceDownload = false)
     {
         ScrapedData? scrapedData = await ExtractFromFXTwitter(url);
         return scrapedData;

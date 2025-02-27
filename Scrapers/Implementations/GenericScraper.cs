@@ -6,10 +6,10 @@ namespace TelegramMediaGrabberBot.Scrapers.Implementations;
 
 public class GenericScraper(IHttpClientFactory httpClientFactory) : ScraperBase(httpClientFactory)
 {
-    public override async Task<ScrapedData?> ExtractContentAsync(Uri uri)
+    public override async Task<ScrapedData?> ExtractContentAsync(Uri uri, bool forceDownload = false)
     {
         string urlRequest = await HttpUtils.GetRealUrlFromMoved(uri.AbsoluteUri);
-        MediaDetails? media = await YtDownloader.DownloadVideoFromUrlAsync(urlRequest, false);
+        MediaDetails? media = await YtDownloader.DownloadVideoFromUrlAsync(urlRequest, forceDownload);
         if (media != null)
         {
             ScrapedData scraped = new()

@@ -55,6 +55,8 @@ public class Scraper
                 "twitter.com" or "fxtwitter.com" or "x.com" => await _twitterScraper.ExtractContentAsync(uri),
                 "bsky.app" => await _blueSkyScraper!.ExtractContentAsync(uri),
                 "instagram.com" or "ddinstagram.com" => await _instagramScraper.ExtractContentAsync(uri),
+                "tiktok.com" or "vm.tiktok.com" => await _genericScraper.ExtractContentAsync(uri, true),
+
                 _ => await _genericScraper.ExtractContentAsync(uri),
             };
         }

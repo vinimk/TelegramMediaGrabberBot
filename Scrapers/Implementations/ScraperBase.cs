@@ -12,7 +12,7 @@ namespace TelegramMediaGrabberBot.Scrapers.Implementations
             _logger = ApplicationLogging.CreateLogger(GetType().Name);
         }
 
-        public virtual async Task<ScrapedData?> ExtractContentAsync(Uri uri)
+        public virtual async Task<ScrapedData?> ExtractContentAsync(Uri uri, bool forceDownload = false)
         {
             await Task.Delay(0);
             return new ScrapedData();

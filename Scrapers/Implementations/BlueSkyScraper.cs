@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Diagnostics;
 using FishyFlip;
+using FishyFlip.Lexicon;
 using FishyFlip.Lexicon.App.Bsky.Embed;
 using FishyFlip.Lexicon.App.Bsky.Feed;
 using FishyFlip.Models;
@@ -9,23 +10,31 @@ using TelegramMediaGrabberBot.Utils;
 
 namespace TelegramMediaGrabberBot.Scrapers.Implementations;
 
-public class BlueSkyScraper(IHttpClientFactory httpClientFactory, string userName, string password) : ScraperBase(httpClientFactory)
+public class BlueSkyScraper : ScraperBase
 {
     private static ATProtocol? _atProtocol;
-    public override async Task<ScrapedData?> ExtractContentAsync(Uri postUrl)
+    private static string? _userName;
+    private static string? _passWord;
+
+    public BlueSkyScraper(IHttpClientFactory httpClientFactory, string userName, string password) : base(httpClientFactory)
+    {
+        Guard.IsNotNullOrWhiteSpace(userName);
+        Guard.IsNotNullOrWhiteSpace(password);
+        _userName = userName;
+        _passWord = password;
+    }
+
+    public override async Task<ScrapedData?> ExtractContentAsync(Uri postUrl, bool forceDownload = false)
     {
         if (_atProtocol == null)
         {
-            Guard.IsNotNullOrWhiteSpace(userName);
-            Guard.IsNotNullOrWhiteSpace(password);
-
             ATProtocolBuilder atProtocolBuilder = new ATProtocolBuilder()
                 .EnableAutoRenewSession(true)
                 // Set the instance URL for the PDS you wish to connect to.
                 // Defaults to bsky.social.
                 .WithLogger(_logger);
             _atProtocol = atProtocolBuilder.Build();
-            _ = await _atProtocol.AuthenticateWithPasswordResultAsync(userName, password);
+            _ = await _atProtocol.AuthenticateWithPasswordResultAsync(_userName!, _passWord!);
         }
 
         string user = postUrl.Segments[2];
@@ -40,6 +49,14 @@ public class BlueSkyScraper(IHttpClientFactory httpClientFactory, string userNam
         ATUri atUri = new(url);
 
         Result<GetPostThreadOutput?> result = await _atProtocol.Feed.GetPostThreadAsync(atUri, 0);
+
+        if (result.Value is ExpiredTokenError) //workarround for autorenewal not working
+        {
+            _logger.LogInformation("Token expired, setting protocol to null {token}", result.Value.ToString());
+            _atProtocol = null;
+            return await ExtractContentAsync(postUrl);
+        }
+
         PostView post = ((ThreadViewPost)((GetPostThreadOutput)result.Value!).Thread!).Post!;
 
         ScrapedData scrapedData = new()
