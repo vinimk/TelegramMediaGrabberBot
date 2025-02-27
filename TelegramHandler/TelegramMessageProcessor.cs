@@ -76,12 +76,12 @@ public static class TelegramMessageProcessor
                                     //workarround for telegram failing to download media directly
                                     logger.LogInformation("Telegram download fail, trying direct download of media before sending to telegram url:{url}", uri);
 
-                                    albumMedia.Clear();
+                                    albumMedia = [];
 
                                     foreach (Media? media in data.Medias.Where(x => x.Type == MediaType.Video)) //only try to force for videos for now
                                     {
-                                        Task<Stream?> stream = Utils.HttpUtils.GetStreamFromUrl(media.Uri!);
-                                        InputFileStream inputFile = InputFile.FromStream(media.Stream!, Guid.NewGuid().ToString());
+                                        Stream? stream = await Utils.HttpUtils.GetStreamFromUrl(media.Uri!);
+                                        InputFileStream inputFile = InputFile.FromStream(stream!, Guid.NewGuid().ToString());
                                         InputMediaVideo inputMedia = new(inputFile)
                                         {
                                             HasSpoiler = isSpoiler,

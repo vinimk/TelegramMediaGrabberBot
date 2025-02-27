@@ -64,7 +64,8 @@ public class InstagramScraper : ScraperBase
 
             using HttpClient client = _httpClientFactory.CreateClient("default");
             client.DefaultRequestHeaders.UserAgent.Clear();
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("discord");
+            client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
 
             HttpResponseMessage response = await client.GetAsync(newUrl);
 

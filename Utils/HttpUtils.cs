@@ -42,6 +42,12 @@ public static class HttpUtils
     public static async Task<Stream?> GetStreamFromUrl(Uri uri)
     {
         HttpClient httpClient = new();
-        return await httpClient.GetStreamAsync(uri);
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("curl");
+
+        HttpResponseMessage response = await httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
+
+        _ = response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadAsStreamAsync();
     }
 }
