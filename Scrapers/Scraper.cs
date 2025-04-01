@@ -9,9 +9,9 @@ namespace TelegramMediaGrabberBot.Scrapers;
 
 public class Scraper
 {
-    private readonly InstagramScraper _instagramScraper;
-    private readonly TwitterScraper _twitterScraper;
-    private readonly BlueSkyScraper _blueSkyScraper;
+    private readonly InstagramScraper? _instagramScraper;
+    private readonly TwitterScraper? _twitterScraper;
+    private readonly BlueSkyScraper? _blueSkyScraper;
     private readonly GenericScraper _genericScraper;
     protected readonly ILogger _logger;
     public Scraper(IHttpClientFactory httpClientFactory, AppSettings appSettings)
@@ -52,9 +52,9 @@ public class Scraper
 
             return host switch
             {
-                "twitter.com" or "fxtwitter.com" or "x.com" => await _twitterScraper.ExtractContentAsync(uri),
+                "twitter.com" or "fxtwitter.com" or "x.com" => await _twitterScraper!.ExtractContentAsync(uri),
                 "bsky.app" => await _blueSkyScraper!.ExtractContentAsync(uri),
-                "instagram.com" or "ddinstagram.com" => await _instagramScraper.ExtractContentAsync(uri),
+                "instagram.com" or "ddinstagram.com" => await _instagramScraper!.ExtractContentAsync(uri),
                 "tiktok.com" or "vm.tiktok.com" => await _genericScraper.ExtractContentAsync(uri, true),
 
                 _ => await _genericScraper.ExtractContentAsync(uri),
