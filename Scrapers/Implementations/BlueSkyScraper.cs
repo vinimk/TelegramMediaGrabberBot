@@ -77,7 +77,7 @@ public class BlueSkyScraper : ScraperBase
                     Type = MediaType.Image,
                     Uri = new Uri(image.Fullsize!)
                 };
-                scrapedData.Medias.Add(media);
+                scrapedData.Medias!.Add(media);
             }
         }
         else if (post.Embed is ViewVideo video)
@@ -91,7 +91,7 @@ public class BlueSkyScraper : ScraperBase
                     Type = MediaType.Video,
                     Stream = mediaDetails.Stream
                 };
-                scrapedData.Medias.Add(media);
+                scrapedData.Medias!.Add(media);
             }
         }
         else if (post.Embed is ViewRecordWithMedia record)
@@ -106,7 +106,7 @@ public class BlueSkyScraper : ScraperBase
                         Type = MediaType.Image,
                         Uri = new Uri(image.Fullsize!)
                     };
-                    scrapedData.Medias.Add(media);
+                    scrapedData.Medias!.Add(media);
                 }
             }
             else if (record.Media is ViewVideo embedVideo)
@@ -119,7 +119,7 @@ public class BlueSkyScraper : ScraperBase
                         Type = MediaType.Video,
                         Stream = mediaDetails.Stream
                     };
-                    scrapedData.Medias.Add(media);
+                    scrapedData.Medias!.Add(media);
                 }
             }
         }

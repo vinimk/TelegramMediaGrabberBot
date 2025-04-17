@@ -7,7 +7,7 @@ namespace TelegramMediaGrabberBot.DataStructures;
 public class ScrapedData : IDisposable
 {
     public string? Content { get; set; }
-    public List<Media> Medias { get; set; }
+    public List<Media>? Medias { get; set; }
     public string? Author { get; set; }
     public Uri? Uri { get; set; }
     public ScrapedDataType Type { get; set; }
@@ -55,7 +55,7 @@ public class ScrapedData : IDisposable
         switch (Type)
         {
             case ScrapedDataType.Media:
-                if (Medias.Count != 0)
+                if (Medias!.Count != 0)
                 {
                     return true;
                 }
@@ -75,8 +75,11 @@ public class ScrapedData : IDisposable
 
     public void Dispose()
     {
-        Medias.ForEach(x => x.Stream?.Dispose());
-        Medias.Clear();
+        Medias!.ForEach(x => x.Dispose());
+        Content = null;
+        Author = null;
+        Uri = null;
+        Medias = null;
         GC.SuppressFinalize(this);
     }
 }

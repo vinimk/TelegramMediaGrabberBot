@@ -39,12 +39,13 @@ public static class HttpUtils
 
         return redirectedUrl;
     }
+
     public static async Task<Stream?> GetStreamFromUrl(Uri uri)
     {
-        HttpClient httpClient = new();
+        using HttpClient httpClient = new();
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("curl");
 
-        HttpResponseMessage response = await httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
+        using HttpResponseMessage response = await httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
 
         _ = response.EnsureSuccessStatusCode();
 

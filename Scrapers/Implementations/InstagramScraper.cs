@@ -76,7 +76,7 @@ public class InstagramScraper : ScraperBase
             {
                 HtmlDocument doc = new();
                 doc.Load(await response.Content.ReadAsStreamAsync());
-                IEnumerable<HtmlNode> metaNodes = doc.DocumentNode.SelectSingleNode("//head").Descendants("meta");
+                IEnumerable<HtmlNode> metaNodes = doc.DocumentNode.SelectSingleNode("//head")!.Descendants("meta");
 
                 ScrapedData scraped = new()
                 {
@@ -85,7 +85,7 @@ public class InstagramScraper : ScraperBase
 
 
                 HtmlNode? contentNode = metaNodes.
-                    Where(x => x.GetAttributeValue("property", null) == "og:description")
+                    Where(x => x.GetAttributeValue("property", string.Empty) == "og:description")
                     .FirstOrDefault();
 
                 if (contentNode != null)
@@ -94,7 +94,7 @@ public class InstagramScraper : ScraperBase
                 }
 
                 HtmlNode? authorNode = metaNodes.
-                    Where(x => x.GetAttributeValue("name", null) == "twitter:title")
+                    Where(x => x.GetAttributeValue("name", string.Empty) == "twitter:title")
                     .FirstOrDefault();
 
                 if (authorNode != null)
@@ -103,7 +103,7 @@ public class InstagramScraper : ScraperBase
                 }
 
 
-                HtmlNode? videoNode = metaNodes.Where(x => x.GetAttributeValue("property", null) == "og:video")
+                HtmlNode? videoNode = metaNodes.Where(x => x.GetAttributeValue("property", string.Empty) == "og:video")
                     .FirstOrDefault();
 
                 if (videoNode != null)
@@ -114,12 +114,12 @@ public class InstagramScraper : ScraperBase
                     {
                         videoUrl = $"https://{host}{videoUrl}";
                     }
-                    scraped.Medias.Add(new Media { Type = MediaType.Video, Uri = new Uri(videoUrl) });
+                    scraped.Medias!.Add(new Media { Type = MediaType.Video, Uri = new Uri(videoUrl) });
                 }
                 else
                 {
                     HtmlNode? imageNode = metaNodes.
-                        Where(x => x.GetAttributeValue("property", null) == "og:image")
+                        Where(x => x.GetAttributeValue("property", string.Empty) == "og:image")
                         .FirstOrDefault();
 
                     if (imageNode != null)
@@ -130,7 +130,7 @@ public class InstagramScraper : ScraperBase
                         {
                             imageUrl = $"https://{host}{imageUrl}";
                         }
-                        scraped.Medias.Add(new Media { Type = MediaType.Image, Uri = new Uri(imageUrl) });
+                        scraped.Medias!.Add(new Media { Type = MediaType.Image, Uri = new Uri(imageUrl) });
                     }
                 }
 

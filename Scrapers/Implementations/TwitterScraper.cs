@@ -70,7 +70,7 @@ public class TwitterScraper : ScraperBase
                         {
                             if (!string.IsNullOrEmpty(video.Url))
                             {
-                                scraped.Medias.Add(new Media { Type = MediaType.Video, Uri = new Uri(video.Url) });
+                                scraped.Medias!.Add(new Media { Type = MediaType.Video, Uri = new Uri(video.Url) });
                             }
                         }
                     }
@@ -83,7 +83,7 @@ public class TwitterScraper : ScraperBase
                         {
                             if (!string.IsNullOrEmpty(photo.Url))
                             {
-                                scraped.Medias.Add(new Media { Type = MediaType.Image, Uri = new Uri(photo.Url) });
+                                scraped.Medias!.Add(new Media { Type = MediaType.Image, Uri = new Uri(photo.Url) });
                             }
                         }
                     }

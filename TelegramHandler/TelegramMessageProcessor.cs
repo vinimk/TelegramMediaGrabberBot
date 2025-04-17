@@ -11,6 +11,7 @@ public static class TelegramMessageProcessor
 {
     public static async Task ProcessMesage(Scraper scrapper, Uri uri, Message message, ITelegramBotClient botClient, ILogger<TelegramUpdateHandler> logger, CancellationToken cancellationToken, bool forceDownload = false)
     {
+        List<IAlbumInputMedia> albumMedia = [];
         try
         {
             int? messageThreadId = message.IsTopicMessage == true &&
@@ -31,9 +32,8 @@ public static class TelegramMessageProcessor
                     case ScrapedDataType.Media:
                         try
                         {
-                            if (data.Medias.Count != 0)
+                            if (data.Medias!.Count != 0)
                             {
-                                List<IAlbumInputMedia> albumMedia = [];
                                 foreach (Media? media in data.Medias)
                                 {
                                     ChatAction chatAction = media.Type == MediaType.Video ? ChatAction.UploadVideo : ChatAction.UploadPhoto;
@@ -88,6 +88,7 @@ public static class TelegramMessageProcessor
                                             Caption = data.GetTelegramFormatedText(isSpoiler, isCaption: true),
                                             ParseMode = ParseMode.Html
                                         };
+
                                         albumMedia.Add(inputMedia);
                                     }
 
@@ -122,6 +123,15 @@ public static class TelegramMessageProcessor
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed for {Message} for chat {chatName}, {threadId}", message.Text, message.Chat.Title + message.Chat.Username, message.MessageThreadId);
+        }
+        finally
+        {
+            albumMedia
+                .Select(x => x as InputMedia)
+                .Where(x => x != null && x.Media.FileType == FileType.Stream)
+                .Select(x => x!.Media as InputFileStream)
+                .ToList()
+                .ForEach(x => x!.Content.Dispose());
         }
     }
 }
