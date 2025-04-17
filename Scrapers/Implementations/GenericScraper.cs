@@ -8,13 +8,12 @@ public class GenericScraper(IHttpClientFactory httpClientFactory) : ScraperBase(
 {
     public override async Task<ScrapedData?> ExtractContentAsync(Uri uri, bool forceDownload = false)
     {
-        string urlRequest = await HttpUtils.GetRealUrlFromMoved(uri.AbsoluteUri);
-        MediaDetails? media = await YtDownloader.DownloadVideoFromUrlAsync(urlRequest, forceDownload);
+        MediaDetails? media = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri, forceDownload);
         if (media != null)
         {
             ScrapedData scraped = new()
             {
-                Uri = new Uri(urlRequest, UriKind.Absolute),
+                Uri = uri,
                 Medias = [media],
                 Content = media.Content,
                 Author = media.Author,

@@ -7,9 +7,9 @@ using TelegramMediaGrabberBot.Scrapers;
 
 namespace TelegramMediaGrabberBot.TelegramHandler;
 
-public static class TelegramMessageProcessor
+public class TelegramMessageProcessor
 {
-    public static async Task ProcessMesage(Scraper scrapper, Uri uri, Message message, ITelegramBotClient botClient, ILogger<TelegramUpdateHandler> logger, CancellationToken cancellationToken, bool forceDownload = false)
+    public async Task ProcessMesage(Scraper scrapper, Uri uri, Message message, ITelegramBotClient botClient, ILogger<TelegramUpdateHandler> logger, CancellationToken cancellationToken, bool forceDownload = false)
     {
         List<IAlbumInputMedia> albumMedia = [];
         try
@@ -19,7 +19,7 @@ public static class TelegramMessageProcessor
                 ? message.MessageThreadId
                 : null;
 
-            _ = botClient.SendChatAction(chatId: message.Chat, messageThreadId: messageThreadId, action: ChatAction.Typing, cancellationToken: cancellationToken);
+            await botClient.SendChatAction(chatId: message.Chat, messageThreadId: messageThreadId, action: ChatAction.Typing, cancellationToken: cancellationToken);
 
             using ScrapedData? data = await scrapper.GetScrapedDataFromUrlAsync(uri, forceDownload);
 
@@ -38,7 +38,7 @@ public static class TelegramMessageProcessor
                                 {
                                     ChatAction chatAction = media.Type == MediaType.Video ? ChatAction.UploadVideo : ChatAction.UploadPhoto;
 
-                                    _ = botClient.SendChatAction(chatId: message.Chat, messageThreadId: messageThreadId, action: chatAction, cancellationToken: cancellationToken);
+                                    await botClient.SendChatAction(chatId: message.Chat, messageThreadId: messageThreadId, action: chatAction, cancellationToken: cancellationToken);
 
                                     InputFile inputFile;
                                     if (media.Uri != null)

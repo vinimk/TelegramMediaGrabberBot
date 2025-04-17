@@ -12,7 +12,6 @@ namespace TelegramMediaGrabberBot.TelegramHandler;
 public partial class TelegramUpdateHandler : IUpdateHandler
 {
     #region variables
-    private readonly ITelegramBotClient _botClient;
     private readonly ILogger<TelegramUpdateHandler> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly Scraper _scraper;
@@ -26,22 +25,16 @@ public partial class TelegramUpdateHandler : IUpdateHandler
     {
         Guard.IsNotNull(appSettings);
         Guard.IsNotNull(appSettings.SupportedWebSites);
-        _botClient = botClient;
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _scraper = new Scraper(_httpClientFactory, appSettings);
         _supportedWebSites = appSettings.SupportedWebSites;
     }
 
-    public async Task HandleUpdateAsync(ITelegramBotClient _, Update update, CancellationToken cancellationToken)
+    public Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        Task handler = update switch
-        {
-            { Message: { } message } => BotOnMessageReceived(message, cancellationToken),
-            _ => Task.CompletedTask
-        };
-
-        await handler;
+        _ = BotOnMessageReceived(botClient, update!.Message!, cancellationToken);
+        return Task.CompletedTask;
     }
 
 
@@ -67,20 +60,20 @@ public partial class TelegramUpdateHandler : IUpdateHandler
 
     #endregion
 
-    private Task BotOnMessageReceived(Message message, CancellationToken cancellationToken)
+    private async Task BotOnMessageReceived(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
     {
         try
         {
             if (message.Text is not { } messageText)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             if (messageText.Contains('@'))
             {
                 Task action = messageText.Split('@')[0] switch
                 {
-                    "/acende" => SendRojao(_botClient, message, cancellationToken),
+                    "/acende" => SendRojao(botClient, message, cancellationToken),
                     _ => Task.CompletedTask
                 };
             }
@@ -91,18 +84,16 @@ public partial class TelegramUpdateHandler : IUpdateHandler
             {
                 if (!_supportedWebSites.Any(s => uri.AbsoluteUri.Contains(s, StringComparison.CurrentCultureIgnoreCase)))
                 {
-                    return Task.CompletedTask;
+                    return;
                 }
-
-                _ = TelegramMessageProcessor.ProcessMesage(_scraper, uri, message, _botClient, _logger, cancellationToken);
+                TelegramMessageProcessor processor = new();
+                await processor.ProcessMesage(_scraper, uri, message, botClient, _logger, cancellationToken);
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "{message} {chatname}", message.Text, message.Chat.Title + message.Chat.Username);
         }
-
-        return Task.CompletedTask;
     }
 
     private static async Task SendRojao(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
