@@ -15,7 +15,7 @@ public static class YtDownloader
     private static readonly int _maxFileSize = 52428800; //about 50MB, current filesize limit for telegram bots https://core.telegram.org/bots/faq#how-do-i-upload-a-large-file
     private static readonly string _ytdlpFormat = "bv*[filesize<=45M]+ba[filesize<=5M]/bv*[filesize_approx<=45M]+ba[filesize_approx<=5M]/bv*[vbr<=700]+ba/b*[filesize<50M]/b*[filesize_approx<50M]/b";
 
-    private static readonly SemaphoreSlim _semaphore = new(2, 2);
+    private static readonly SemaphoreSlim _semaphore = new(3);
     static YtDownloader()
     {
         LastUpdateOfYtDlp = new();
