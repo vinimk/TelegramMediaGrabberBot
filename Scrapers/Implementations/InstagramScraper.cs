@@ -11,11 +11,13 @@ public class InstagramScraper : ScraperBase
 {
     private readonly string? _userName;
     private readonly string? _password;
+    private readonly List<string> _instagramProxies;
 
-    public InstagramScraper(IHttpClientFactory httpClientFactory, List<string> bibliogramInstances, string? userName = null, string? password = null)
+    public InstagramScraper(IHttpClientFactory httpClientFactory, List<string> instagramProxies, string? userName = null, string? password = null)
         : base(httpClientFactory)
     {
-        Guard.IsNotNull(bibliogramInstances);
+        Guard.IsNotNull(instagramProxies);
+        _instagramProxies = instagramProxies;
         _userName = userName;
         _password = password;
     }
@@ -24,16 +26,19 @@ public class InstagramScraper : ScraperBase
     {
         ScrapedData? scrapedData = null;
 
-        for (int i = 0; i < 4; i++) //try 4 times to get because sometimes after the first try ddinstagram gets the file
+        for (int i = 0; i < 3; i++) //3 times for each
         {
-            scrapedData = await ExtractFromDDInstagram(instagramUrl);
-            if (scrapedData != null)
+            foreach (string hostUrl in _instagramProxies)
             {
-                return scrapedData;
-            }
-            else
-            {
-                await Task.Delay(2000);
+                scrapedData = await ExtractFromMetaInstagram(hostUrl, instagramUrl);
+                if (scrapedData != null)
+                {
+                    return scrapedData;
+                }
+                else
+                {
+                    await Task.Delay(2000);
+                }
             }
         }
 
@@ -47,13 +52,12 @@ public class InstagramScraper : ScraperBase
     }
 
 
-    public async Task<ScrapedData?> ExtractFromDDInstagram(Uri instagramUrl)
+    public async Task<ScrapedData?> ExtractFromMetaInstagram(string hostUrl, Uri instagramUrl)
     {
-        string host = "ddinstagram.com";
         UriBuilder newUriBuilder = new(instagramUrl.AbsoluteUri)
         {
             Scheme = Uri.UriSchemeHttps,
-            Host = host,
+            Host = hostUrl,
             Port = -1, //defualt port for schema
         };
 
@@ -103,7 +107,8 @@ public class InstagramScraper : ScraperBase
                 }
 
 
-                HtmlNode? videoNode = metaNodes.Where(x => x.GetAttributeValue("property", string.Empty) == "og:video")
+                HtmlNode? videoNode = metaNodes
+                    .Where(x => x.GetAttributeValue("property", string.Empty) is "og:video" or "og:video:url")
                     .FirstOrDefault();
 
                 if (videoNode != null)
@@ -112,14 +117,14 @@ public class InstagramScraper : ScraperBase
                     scraped.Type = ScrapedDataType.Media;
                     if (!videoUrl.StartsWith("https://"))
                     {
-                        videoUrl = $"https://{host}{videoUrl}";
+                        videoUrl = $"https://{hostUrl}{videoUrl}";
                     }
                     scraped.Medias!.Add(new Media { Type = MediaType.Video, Uri = new Uri(videoUrl) });
                 }
                 else
                 {
-                    HtmlNode? imageNode = metaNodes.
-                        Where(x => x.GetAttributeValue("property", string.Empty) == "og:image")
+                    HtmlNode? imageNode = metaNodes
+                        .Where(x => x.GetAttributeValue("property", string.Empty) is "og:image" or "og:image:url")
                         .FirstOrDefault();
 
                     if (imageNode != null)
@@ -128,7 +133,7 @@ public class InstagramScraper : ScraperBase
                         scraped.Type = ScrapedDataType.Media;
                         if (!imageUrl.StartsWith("https://"))
                         {
-                            imageUrl = $"https://{host}{imageUrl}";
+                            imageUrl = $"https://{hostUrl}{imageUrl}";
                         }
                         scraped.Medias!.Add(new Media { Type = MediaType.Image, Uri = new Uri(imageUrl) });
                     }

@@ -19,7 +19,7 @@ public abstract class PollingServiceBase<TReceiverService> : BackgroundService
     {
         Guard.IsNotNull(appSettings);
         Guard.IsNotNull(appSettings.NitterInstances);
-        Guard.IsNotNull(appSettings.BibliogramInstances);
+        Guard.IsNotNull(appSettings.InstagramProxies);
         Guard.IsNotNull(appSettings.SupportedWebSites);
         _serviceProvider = serviceProvider;
         _logger = logger;

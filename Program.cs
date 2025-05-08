@@ -21,8 +21,8 @@ IHost host = Host.CreateDefaultBuilder(args)
         List<string>? nitterInstances = hostContext.Configuration.GetSection("NitterInstances").Get<List<string>>();
         logger.LogInformation("nitterInstances {nitterInstances}", nitterInstances);
 
-        List<string>? bibliogramInstances = hostContext.Configuration.GetSection("BibliogramInstances").Get<List<string>>();
-        logger.LogInformation("bibliogramInstances {bibliogramInstances}", bibliogramInstances);
+        List<string>? instagramProxies = hostContext.Configuration.GetSection("InstagramProxies").Get<List<string>>();
+        logger.LogInformation("instagramProxies {instagramProxies}", instagramProxies);
 
         List<string>? supportedWebSites = hostContext.Configuration.GetSection("SupportedWebSites").Get<List<string>>();
         logger.LogInformation("supportedWebSites {supportedWebSites}", supportedWebSites);
@@ -44,7 +44,7 @@ IHost host = Host.CreateDefaultBuilder(args)
             TelegramBotConfig = telegramBotConfig,
             WhitelistedGroups = whiteListedGroups,
             NitterInstances = nitterInstances,
-            BibliogramInstances = bibliogramInstances,
+            InstagramProxies = instagramProxies,
             SupportedWebSites = supportedWebSites,
             HoursBetweenBackgroundTask = hoursBetweenBackgroundTask,
             BlueSkyAuth = blueSkyAuth,
