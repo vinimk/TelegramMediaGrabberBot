@@ -7,9 +7,9 @@ using TelegramMediaGrabberBot.Scrapers;
 
 namespace TelegramMediaGrabberBot.TelegramHandler;
 
-public class TelegramMessageProcessor
+public static class TelegramMessageProcessor
 {
-    public async Task ProcessMesage(Scraper scrapper, Uri uri, Message message, ITelegramBotClient botClient, ILogger<TelegramUpdateHandler> logger, CancellationToken cancellationToken, bool forceDownload = false)
+    public static async Task ProcessMesage(Scraper scrapper, Uri uri, Message message, ITelegramBotClient botClient, ILogger<TelegramUpdateHandler> logger, CancellationToken cancellationToken, bool forceDownload = false)
     {
         List<IAlbumInputMedia> albumMedia = [];
         try

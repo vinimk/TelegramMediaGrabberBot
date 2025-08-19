@@ -62,10 +62,36 @@ public class BlueSkyScraper : ScraperBase
         ScrapedData scrapedData = new()
         {
             Type = ScrapedDataType.Text,
-            Content = post.PostRecord!.Text,
             Author = post.Author!.DisplayName,
             Uri = postUrl
         };
+
+        var postText = post.PostRecord!.Text;
+        var urlsInText = post.PostRecord!.Facets!.Where(x => x.Type == "app.bsky.richtext.facet");
+
+
+        foreach (var facet in urlsInText)
+        {
+            int start = (int)facet.Index.ByteStart;
+            int end = (int)facet.Index.ByteEnd;
+            int length = end - start;
+            if (facet.Features!.FirstOrDefault(x => x is FishyFlip.Lexicon.App.Bsky.Richtext.Link) is FishyFlip.Lexicon.App.Bsky.Richtext.Link link && postText != null)
+            {
+                string replecaement = link.Uri;
+                // Extract the part before the replacement
+                string firstPart = postText[..start];
+
+                // Extract the part after the replacement (if any)
+                string secondPart = postText[(start + length)..];
+
+                // Concatenate to form the new string
+                string newString = firstPart + replecaement + secondPart;
+
+                postText = newString;
+            }
+        }
+
+        scrapedData.Content = postText;
 
         if (post.Embed is ViewImages images)
         {

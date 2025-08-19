@@ -86,8 +86,7 @@ public partial class TelegramUpdateHandler : IUpdateHandler
                 {
                     return;
                 }
-                TelegramMessageProcessor processor = new();
-                await processor.ProcessMesage(_scraper, uri, message, botClient, _logger, cancellationToken);
+                await TelegramMessageProcessor.ProcessMesage(_scraper, uri, message, botClient, _logger, cancellationToken);
             }
         }
         catch (Exception ex)
