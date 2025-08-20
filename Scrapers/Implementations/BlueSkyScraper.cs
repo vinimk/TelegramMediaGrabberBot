@@ -67,27 +67,30 @@ public class BlueSkyScraper : ScraperBase
         };
 
         var postText = post.PostRecord!.Text;
-        var urlsInText = post.PostRecord!.Facets!.Where(x => x.Type == "app.bsky.richtext.facet");
-
-
-        foreach (var facet in urlsInText)
+        
+        if (post.PostRecord.Facets != null)
         {
-            int start = (int)facet.Index.ByteStart;
-            int end = (int)facet.Index.ByteEnd;
-            int length = end - start;
-            if (facet.Features!.FirstOrDefault(x => x is FishyFlip.Lexicon.App.Bsky.Richtext.Link) is FishyFlip.Lexicon.App.Bsky.Richtext.Link link && postText != null)
+            var urlsInText = post.PostRecord!.Facets!.Where(x => x.Type == "app.bsky.richtext.facet");
+
+            foreach (var facet in urlsInText)
             {
-                string replecaement = link.Uri;
-                // Extract the part before the replacement
-                string firstPart = postText[..start];
+                int start = (int)facet.Index.ByteStart;
+                int end = (int)facet.Index.ByteEnd;
+                int length = end - start;
+                if (facet.Features!.FirstOrDefault(x => x is FishyFlip.Lexicon.App.Bsky.Richtext.Link) is FishyFlip.Lexicon.App.Bsky.Richtext.Link link && postText != null)
+                {
+                    string replecaement = link.Uri;
+                    // Extract the part before the replacement
+                    string firstPart = postText[..start];
 
-                // Extract the part after the replacement (if any)
-                string secondPart = postText[(start + length)..];
+                    // Extract the part after the replacement (if any)
+                    string secondPart = postText[(start + length)..];
 
-                // Concatenate to form the new string
-                string newString = firstPart + replecaement + secondPart;
+                    // Concatenate to form the new string
+                    string newString = firstPart + replecaement + secondPart;
 
-                postText = newString;
+                    postText = newString;
+                }
             }
         }
 
