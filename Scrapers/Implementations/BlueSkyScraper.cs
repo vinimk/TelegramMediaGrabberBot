@@ -66,13 +66,13 @@ public class BlueSkyScraper : ScraperBase
             Uri = postUrl
         };
 
-        var postText = post.PostRecord!.Text;
-        
+        string? postText = post.PostRecord!.Text;
+
         if (post.PostRecord.Facets != null)
         {
-            var urlsInText = post.PostRecord!.Facets!.Where(x => x.Type == "app.bsky.richtext.facet");
+            IEnumerable<FishyFlip.Lexicon.App.Bsky.Richtext.Facet> urlsInText = post.PostRecord!.Facets.Where(x => x.Type == "app.bsky.richtext.facet");
 
-            foreach (var facet in urlsInText)
+            foreach (FishyFlip.Lexicon.App.Bsky.Richtext.Facet? facet in urlsInText)
             {
                 int start = (int)facet.Index.ByteStart;
                 int end = (int)facet.Index.ByteEnd;
