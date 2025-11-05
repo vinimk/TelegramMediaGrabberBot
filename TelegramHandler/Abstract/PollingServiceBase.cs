@@ -6,16 +6,17 @@ namespace TelegramMediaGrabberBot.TelegramHandler.Abstract;
 // A background service consuming a scoped service.
 // See more: https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/hosted-services#consuming-a-scoped-service-in-a-background-task
 /// <summary>
-/// An abstract class to compose Polling background service and Receiver implementation classes
+///     An abstract class to compose Polling background service and Receiver implementation classes
 /// </summary>
 /// <typeparam name="TReceiverService">Receiver implementation class</typeparam>
 public abstract class PollingServiceBase<TReceiverService> : BackgroundService
     where TReceiverService : IReceiverService
 {
-    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger _logger;
+    private readonly IServiceProvider _serviceProvider;
 
-    public PollingServiceBase(ILogger<PollingServiceBase<TReceiverService>> logger, ILoggerFactory loggerFactory, IServiceProvider serviceProvider, AppSettings appSettings)
+    public PollingServiceBase(ILogger<PollingServiceBase<TReceiverService>> logger, ILoggerFactory loggerFactory,
+        IServiceProvider serviceProvider, AppSettings appSettings)
     {
         Guard.IsNotNull(appSettings);
         Guard.IsNotNull(appSettings.NitterInstances);
@@ -39,14 +40,13 @@ public abstract class PollingServiceBase<TReceiverService> : BackgroundService
         // Make sure we receive updates until Cancellation Requested,
         // no matter what errors our ReceiveAsync get
         while (!stoppingToken.IsCancellationRequested)
-        {
             try
             {
                 // Create new IServiceScope on each iteration.
                 // This way we can leverage benefits of Scoped TReceiverService
                 // and typed HttpClient - we'll grab "fresh" instance each time
-                using IServiceScope scope = _serviceProvider.CreateScope();
-                TReceiverService receiver = scope.ServiceProvider.GetRequiredService<TReceiverService>();
+                using var scope = _serviceProvider.CreateScope();
+                var receiver = scope.ServiceProvider.GetRequiredService<TReceiverService>();
 
                 await receiver.ReceiveAsync(stoppingToken);
             }
@@ -60,6 +60,5 @@ public abstract class PollingServiceBase<TReceiverService> : BackgroundService
                 // Cooldown if something goes wrong
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
-        }
     }
 }

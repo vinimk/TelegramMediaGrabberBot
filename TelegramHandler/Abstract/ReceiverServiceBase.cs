@@ -4,7 +4,7 @@ using Telegram.Bot.Polling;
 namespace TelegramMediaGrabberBot.TelegramHandler.Abstract;
 
 /// <summary>
-/// An abstract class to compose Receiver Service and Update Handler classes
+///     An abstract class to compose Receiver Service and Update Handler classes
 /// </summary>
 /// <typeparam name="TUpdateHandler">Update Handler to use in Update Receiver</typeparam>
 public abstract class ReceiverServiceBase<TUpdateHandler>(
@@ -14,11 +14,11 @@ public abstract class ReceiverServiceBase<TUpdateHandler>(
     where TUpdateHandler : IUpdateHandler
 {
     private readonly ITelegramBotClient _botClient = botClient;
-    private readonly IUpdateHandler _updateHandlers = updateHandler;
     private readonly ILogger<ReceiverServiceBase<TUpdateHandler>> _logger = logger;
+    private readonly IUpdateHandler _updateHandlers = updateHandler;
 
     /// <summary>
-    /// Start to service Updates with provided Update Handler class
+    ///     Start to service Updates with provided Update Handler class
     /// </summary>
     /// <param name="stoppingToken"></param>
     /// <returns></returns>
@@ -29,18 +29,18 @@ public abstract class ReceiverServiceBase<TUpdateHandler>(
             ReceiverOptions receiverOptions = new()
             {
                 AllowedUpdates = [],
-                DropPendingUpdates = true,
+                DropPendingUpdates = true
             };
 
-            Telegram.Bot.Types.User me = await _botClient.GetMe(stoppingToken);
+            var me = await _botClient.GetMe(stoppingToken);
             _logger.LogInformation("Start receiving updates for {BotName}", me.Username ?? "My Awesome Bot");
 
 
             // Start receiving updates
             await _botClient.ReceiveAsync(
-                updateHandler: _updateHandlers,
-                receiverOptions: receiverOptions,
-                cancellationToken: stoppingToken);
+                _updateHandlers,
+                receiverOptions,
+                stoppingToken);
         }
         catch (Exception ex)
         {

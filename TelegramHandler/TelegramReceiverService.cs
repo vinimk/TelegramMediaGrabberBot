@@ -7,6 +7,7 @@ namespace TelegramMediaGrabberBot.TelegramHandler;
 public class TelegramReceiverService(
     ITelegramBotClient botClient,
     TelegramUpdateHandler updateHandler,
-    ILogger<ReceiverServiceBase<TelegramUpdateHandler>> logger) : ReceiverServiceBase<TelegramUpdateHandler>(botClient, updateHandler, logger)
+    ILogger<ReceiverServiceBase<TelegramUpdateHandler>> logger)
+    : ReceiverServiceBase<TelegramUpdateHandler>(botClient, updateHandler, logger)
 {
 }

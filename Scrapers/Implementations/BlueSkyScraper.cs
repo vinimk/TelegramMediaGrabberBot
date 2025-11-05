@@ -3,6 +3,7 @@ using FishyFlip;
 using FishyFlip.Lexicon;
 using FishyFlip.Lexicon.App.Bsky.Embed;
 using FishyFlip.Lexicon.App.Bsky.Feed;
+using FishyFlip.Lexicon.App.Bsky.Richtext;
 using FishyFlip.Models;
 using TelegramMediaGrabberBot.DataStructures;
 using TelegramMediaGrabberBot.DataStructures.Medias;
@@ -16,7 +17,8 @@ public class BlueSkyScraper : ScraperBase
     private static string? _userName;
     private static string? _passWord;
 
-    public BlueSkyScraper(IHttpClientFactory httpClientFactory, string userName, string password) : base(httpClientFactory)
+    public BlueSkyScraper(IHttpClientFactory httpClientFactory, string userName, string password) : base(
+        httpClientFactory)
     {
         Guard.IsNotNullOrWhiteSpace(userName);
         Guard.IsNotNullOrWhiteSpace(password);
@@ -28,7 +30,7 @@ public class BlueSkyScraper : ScraperBase
     {
         if (_atProtocol == null)
         {
-            ATProtocolBuilder atProtocolBuilder = new ATProtocolBuilder()
+            var atProtocolBuilder = new ATProtocolBuilder()
                 .EnableAutoRenewSession(true)
                 // Set the instance URL for the PDS you wish to connect to.
                 // Defaults to bsky.social.
@@ -37,18 +39,15 @@ public class BlueSkyScraper : ScraperBase
             _ = await _atProtocol.AuthenticateWithPasswordResultAsync(_userName!, _passWord!);
         }
 
-        string user = postUrl.Segments[2];
-        string rkey = postUrl.Segments[4];
+        var user = postUrl.Segments[2];
+        var rkey = postUrl.Segments[4];
 
-        if (rkey.EndsWith('/'))
-        {
-            rkey = rkey[..^1];
-        }
+        if (rkey.EndsWith('/')) rkey = rkey[..^1];
 
-        string url = $"at://{user}app.bsky.feed.post/{rkey}";
+        var url = $"at://{user}app.bsky.feed.post/{rkey}";
         ATUri atUri = new(url);
 
-        Result<GetPostThreadOutput?> result = await _atProtocol.Feed.GetPostThreadAsync(atUri, 0);
+        var result = await _atProtocol.Feed.GetPostThreadAsync(atUri, 0);
 
         if (result.Value is ExpiredTokenError) //workarround for autorenewal not working
         {
@@ -57,7 +56,7 @@ public class BlueSkyScraper : ScraperBase
             return await ExtractContentAsync(postUrl);
         }
 
-        PostView post = ((ThreadViewPost)((GetPostThreadOutput)result.Value!).Thread!).Post!;
+        var post = ((ThreadViewPost)((GetPostThreadOutput)result.Value!).Thread!).Post!;
 
         ScrapedData scrapedData = new()
         {
@@ -66,28 +65,28 @@ public class BlueSkyScraper : ScraperBase
             Uri = postUrl
         };
 
-        string? postText = post.PostRecord!.Text;
+        var postText = post.PostRecord!.Text;
 
         if (post.PostRecord.Facets != null)
         {
-            IEnumerable<FishyFlip.Lexicon.App.Bsky.Richtext.Facet> urlsInText = post.PostRecord!.Facets.Where(x => x.Type == "app.bsky.richtext.facet");
+            var urlsInText = post.PostRecord!.Facets.Where(x => x.Type == "app.bsky.richtext.facet");
 
-            foreach (FishyFlip.Lexicon.App.Bsky.Richtext.Facet? facet in urlsInText)
+            foreach (var facet in urlsInText)
             {
-                int start = (int)facet.Index.ByteStart;
-                int end = (int)facet.Index.ByteEnd;
-                int length = end - start;
-                if (facet.Features!.FirstOrDefault(x => x is FishyFlip.Lexicon.App.Bsky.Richtext.Link) is FishyFlip.Lexicon.App.Bsky.Richtext.Link link && postText != null)
+                var start = (int)facet.Index.ByteStart;
+                var end = (int)facet.Index.ByteEnd;
+                var length = end - start;
+                if (facet.Features!.FirstOrDefault(x => x is Link) is Link link && postText != null)
                 {
-                    string replecaement = link.Uri;
+                    var replecaement = link.Uri;
                     // Extract the part before the replacement
-                    string firstPart = postText[..start];
+                    var firstPart = postText[..start];
 
                     // Extract the part after the replacement (if any)
-                    string secondPart = postText[(start + length)..];
+                    var secondPart = postText[(start + length)..];
 
                     // Concatenate to form the new string
-                    string newString = firstPart + replecaement + secondPart;
+                    var newString = firstPart + replecaement + secondPart;
 
                     postText = newString;
                 }
@@ -99,7 +98,7 @@ public class BlueSkyScraper : ScraperBase
         if (post.Embed is ViewImages images)
         {
             scrapedData.Type = ScrapedDataType.Media;
-            foreach (ViewImage image in images.Images!)
+            foreach (var image in images.Images!)
             {
                 Media media = new()
                 {
@@ -112,7 +111,7 @@ public class BlueSkyScraper : ScraperBase
         else if (post.Embed is ViewVideo video)
         {
             scrapedData.Type = ScrapedDataType.Media;
-            MediaDetails? mediaDetails = await YtDownloader.DownloadVideoFromUrlAsync(video.Playlist!, true);
+            var mediaDetails = await YtDownloader.DownloadVideoFromUrlAsync(video.Playlist!, true);
             if (mediaDetails != null)
             {
                 Media media = new()
@@ -128,7 +127,7 @@ public class BlueSkyScraper : ScraperBase
             scrapedData.Type = ScrapedDataType.Media;
             if (record.Media is ViewImages embedImages)
             {
-                foreach (ViewImage image in embedImages.Images!)
+                foreach (var image in embedImages.Images!)
                 {
                     Media media = new()
                     {
@@ -140,7 +139,7 @@ public class BlueSkyScraper : ScraperBase
             }
             else if (record.Media is ViewVideo embedVideo)
             {
-                MediaDetails? mediaDetails = await YtDownloader.DownloadVideoFromUrlAsync(embedVideo.Playlist!, true);
+                var mediaDetails = await YtDownloader.DownloadVideoFromUrlAsync(embedVideo.Playlist!, true);
                 if (mediaDetails != null)
                 {
                     Media media = new()
@@ -152,6 +151,7 @@ public class BlueSkyScraper : ScraperBase
                 }
             }
         }
+
         return scrapedData;
     }
 }

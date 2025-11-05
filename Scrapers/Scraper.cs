@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Diagnostics;
 using TelegramMediaGrabberBot.Config;
 using TelegramMediaGrabberBot.DataStructures;
-using TelegramMediaGrabberBot.DataStructures.Medias;
 using TelegramMediaGrabberBot.Scrapers.Implementations;
 using TelegramMediaGrabberBot.Utils;
 
@@ -9,11 +8,12 @@ namespace TelegramMediaGrabberBot.Scrapers;
 
 public class Scraper
 {
-    private readonly InstagramScraper? _instagramScraper;
-    private readonly TwitterScraper? _twitterScraper;
     private readonly BlueSkyScraper? _blueSkyScraper;
     private readonly GenericScraper _genericScraper;
+    private readonly InstagramScraper? _instagramScraper;
     protected readonly ILogger _logger;
+    private readonly TwitterScraper? _twitterScraper;
+
     public Scraper(IHttpClientFactory httpClientFactory, AppSettings appSettings)
     {
         Guard.IsNotNull(appSettings);
@@ -25,7 +25,8 @@ public class Scraper
         {
             Guard.IsNotNullOrWhiteSpace(appSettings.InstagramAuth.UserName);
             Guard.IsNotNullOrWhiteSpace(appSettings.InstagramAuth.Password);
-            _instagramScraper = new InstagramScraper(httpClientFactory, appSettings.InstagramProxies, userName: appSettings.InstagramAuth.UserName, password: appSettings.InstagramAuth.Password);
+            _instagramScraper = new InstagramScraper(httpClientFactory, appSettings.InstagramProxies,
+                appSettings.InstagramAuth.UserName, appSettings.InstagramAuth.Password);
         }
         else
         {
@@ -36,7 +37,8 @@ public class Scraper
         {
             Guard.IsNotNullOrWhiteSpace(appSettings.BlueSkyAuth.UserName);
             Guard.IsNotNullOrWhiteSpace(appSettings.BlueSkyAuth.Password);
-            _blueSkyScraper = new BlueSkyScraper(httpClientFactory, appSettings.BlueSkyAuth.UserName, appSettings.BlueSkyAuth.Password);
+            _blueSkyScraper = new BlueSkyScraper(httpClientFactory, appSettings.BlueSkyAuth.UserName,
+                appSettings.BlueSkyAuth.Password);
         }
 
         _genericScraper = new GenericScraper(httpClientFactory);
@@ -45,10 +47,10 @@ public class Scraper
 
     public async Task<ScrapedData?> GetScrapedDataFromUrlAsync(Uri uri, bool forceDownload = false)
     {
-        if (forceDownload == false)
+        if (!forceDownload)
         {
             //removes www. from the host
-            string host = uri.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? uri.Host[4..] : uri.Host;
+            var host = uri.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? uri.Host[4..] : uri.Host;
 
             return host switch
             {
@@ -57,13 +59,17 @@ public class Scraper
                 "instagram.com" or "ddinstagram.com" => await _instagramScraper!.ExtractContentAsync(uri),
                 "tiktok.com" or "vm.tiktok.com" => await _genericScraper.ExtractContentAsync(uri, true),
 
-                _ => await _genericScraper.ExtractContentAsync(uri),
+                _ => await _genericScraper.ExtractContentAsync(uri)
             };
         }
-        else
-        {
-            MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri, forceDownload);
-            return videoObj != null ? new ScrapedData { Author = videoObj.Author, Content = videoObj.Content, Type = ScrapedDataType.Media, Uri = uri, Medias = [videoObj] } : null;
-        }
+
+        var videoObj = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri, forceDownload);
+        return videoObj != null
+            ? new ScrapedData
+            {
+                Author = videoObj.Author, Content = videoObj.Content, Type = ScrapedDataType.Media, Uri = uri,
+                Medias = [videoObj]
+            }
+            : null;
     }
 }

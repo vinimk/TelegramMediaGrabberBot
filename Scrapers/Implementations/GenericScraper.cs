@@ -1,5 +1,4 @@
 ﻿using TelegramMediaGrabberBot.DataStructures;
-using TelegramMediaGrabberBot.DataStructures.Medias;
 using TelegramMediaGrabberBot.Utils;
 
 namespace TelegramMediaGrabberBot.Scrapers.Implementations;
@@ -8,7 +7,7 @@ public class GenericScraper(IHttpClientFactory httpClientFactory) : ScraperBase(
 {
     public override async Task<ScrapedData?> ExtractContentAsync(Uri uri, bool forceDownload = false)
     {
-        MediaDetails? media = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri, forceDownload);
+        var media = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri, forceDownload);
         if (media != null)
         {
             ScrapedData scraped = new()
@@ -21,6 +20,7 @@ public class GenericScraper(IHttpClientFactory httpClientFactory) : ScraperBase(
             };
             return scraped;
         }
+
         return null;
     }
 }
