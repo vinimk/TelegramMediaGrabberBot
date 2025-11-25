@@ -16,7 +16,7 @@ public static class TelegramMessageProcessor
         List<IAlbumInputMedia> albumMedia = [];
         try
         {
-            var messageThreadId = message.IsTopicMessage &&
+            int? messageThreadId = message.IsTopicMessage &&
                                   message.MessageThreadId is not null and > 0
                 ? message.MessageThreadId
                 : null;
@@ -24,11 +24,11 @@ public static class TelegramMessageProcessor
             await botClient.SendChatAction(message.Chat, messageThreadId: messageThreadId, action: ChatAction.Typing,
                 cancellationToken: cancellationToken);
 
-            using var data = await scrapper.GetScrapedDataFromUrlAsync(uri, forceDownload);
+            using ScrapedData? data = await scrapper.GetScrapedDataFromUrlAsync(uri, forceDownload);
 
             if (data != null)
             {
-                var isSpoiler = message.Entities != null &&
+                bool isSpoiler = message.Entities != null &&
                                 message.Entities.Any(x => x.Type == MessageEntityType.Spoiler);
 
                 switch (data.Type)
@@ -38,9 +38,9 @@ public static class TelegramMessageProcessor
                         {
                             if (data.Medias!.Count != 0)
                             {
-                                foreach (var media in data.Medias)
+                                foreach (Media media in data.Medias)
                                 {
-                                    var chatAction = media.Type == MediaType.Video
+                                    ChatAction chatAction = media.Type == MediaType.Video
                                         ? ChatAction.UploadVideo
                                         : ChatAction.UploadPhoto;
 
@@ -92,12 +92,12 @@ public static class TelegramMessageProcessor
 
                                     albumMedia = [];
 
-                                    foreach (var media in
+                                    foreach (Media? media in
                                              data.Medias.Where(x =>
                                                  x.Type == MediaType.Video)) //only try to force for videos for now
                                     {
-                                        var stream = await HttpUtils.GetStreamFromUrl(media.Uri!);
-                                        var inputFile = InputFile.FromStream(stream!, Guid.NewGuid().ToString());
+                                        Stream? stream = await HttpUtils.GetStreamFromUrl(media.Uri!);
+                                        InputFileStream inputFile = InputFile.FromStream(stream!, Guid.NewGuid().ToString());
                                         InputMediaVideo inputMedia = new(inputFile)
                                         {
                                             HasSpoiler = isSpoiler,
@@ -122,7 +122,9 @@ public static class TelegramMessageProcessor
                             logger.LogInformation(ex, "{uri} error, trying forceDownload", uri.AbsoluteUri);
 
                             if (!forceDownload)
+                            {
                                 await ProcessMesage(scrapper, uri, message, botClient, logger, cancellationToken, true);
+                            }
                         }
 
                         break;

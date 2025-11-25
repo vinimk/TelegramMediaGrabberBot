@@ -1,5 +1,5 @@
-﻿using System.Net.Http.Json;
-using CommunityToolkit.Diagnostics;
+﻿using CommunityToolkit.Diagnostics;
+using System.Net.Http.Json;
 using TelegramMediaGrabberBot.DataStructures;
 using TelegramMediaGrabberBot.DataStructures.Medias;
 using Media = TelegramMediaGrabberBot.DataStructures.Medias.Media;
@@ -19,13 +19,13 @@ public class TwitterScraper : ScraperBase
 
     public override async Task<ScrapedData?> ExtractContentAsync(Uri url, bool forceDownload = false)
     {
-        var scrapedData = await ExtractFromFXTwitter(url);
+        ScrapedData? scrapedData = await ExtractFromFXTwitter(url);
         return scrapedData;
     }
 
     public async Task<ScrapedData?> ExtractFromFXTwitter(Uri url)
     {
-        var host = "api.fxtwitter.com";
+        string host = "api.fxtwitter.com";
         UriBuilder newUriBuilder = new(url)
         {
             Scheme = Uri.UriSchemeHttps,
@@ -34,19 +34,19 @@ public class TwitterScraper : ScraperBase
         };
 
         // get a Uri instance from the UriBuilder
-        var newUrl = newUriBuilder.Uri.AbsoluteUri;
+        string newUrl = newUriBuilder.Uri.AbsoluteUri;
 
         try
         {
-            using var client = _httpClientFactory.CreateClient("default");
+            using HttpClient client = _httpClientFactory.CreateClient("default");
             client.DefaultRequestHeaders.UserAgent.ParseAdd("TelegramMediaGrabberBot");
 
-            var response = await client.GetFromJsonAsync<FxTwitterResponse>(newUrl);
+            FxTwitterResponse? response = await client.GetFromJsonAsync<FxTwitterResponse>(newUrl);
 
             if (response != null &&
                 response.Post != null)
             {
-                var post = response.Post;
+                Tweet post = response.Post;
                 ScrapedData scraped = new()
                 {
                     Uri = url,
@@ -54,8 +54,10 @@ public class TwitterScraper : ScraperBase
                     Type = ScrapedDataType.Text
                 };
 
-                if (post.Author != null) scraped.Author = post.Author.Name;
-
+                if (post.Author != null)
+                {
+                    scraped.Author = post.Author.Name;
+                }
 
                 if (post.Media != null)
                 {
@@ -63,18 +65,26 @@ public class TwitterScraper : ScraperBase
                     {
                         scraped.Type = ScrapedDataType.Media;
 
-                        foreach (var video in post.Media.Videos)
+                        foreach (Video video in post.Media.Videos)
+                        {
                             if (!string.IsNullOrEmpty(video.Url))
+                            {
                                 scraped.Medias!.Add(new Media { Type = MediaType.Video, Uri = new Uri(video.Url) });
+                            }
+                        }
                     }
 
                     if (post.Media.Photos != null)
                     {
                         scraped.Type = ScrapedDataType.Media;
 
-                        foreach (var photo in post.Media.Photos)
+                        foreach (Photo photo in post.Media.Photos)
+                        {
                             if (!string.IsNullOrEmpty(photo.Url))
+                            {
                                 scraped.Medias!.Add(new Media { Type = MediaType.Image, Uri = new Uri(photo.Url) });
+                            }
+                        }
                     }
                 }
 

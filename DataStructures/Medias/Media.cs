@@ -15,11 +15,8 @@ public record Media : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if (Stream != null)
-        {
-            Stream.Dispose();
-            Stream = null;
-        }
+        Stream?.Dispose();
+        Stream = null;
 
         Uri = null;
         Type = null;

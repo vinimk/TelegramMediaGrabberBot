@@ -1,5 +1,6 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Polling;
+using Telegram.Bot.Types;
 
 namespace TelegramMediaGrabberBot.TelegramHandler.Abstract;
 
@@ -32,7 +33,7 @@ public abstract class ReceiverServiceBase<TUpdateHandler>(
                 DropPendingUpdates = true
             };
 
-            var me = await _botClient.GetMe(stoppingToken);
+            User me = await _botClient.GetMe(stoppingToken);
             _logger.LogInformation("Start receiving updates for {BotName}", me.Username ?? "My Awesome Bot");
 
 

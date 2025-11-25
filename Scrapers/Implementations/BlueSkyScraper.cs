@@ -30,7 +30,7 @@ public class BlueSkyScraper : ScraperBase
     {
         if (_atProtocol == null)
         {
-            var atProtocolBuilder = new ATProtocolBuilder()
+            ATProtocolBuilder atProtocolBuilder = new ATProtocolBuilder()
                 .EnableAutoRenewSession(true)
                 // Set the instance URL for the PDS you wish to connect to.
                 // Defaults to bsky.social.
@@ -39,15 +39,18 @@ public class BlueSkyScraper : ScraperBase
             _ = await _atProtocol.AuthenticateWithPasswordResultAsync(_userName!, _passWord!);
         }
 
-        var user = postUrl.Segments[2];
-        var rkey = postUrl.Segments[4];
+        string user = postUrl.Segments[2];
+        string rkey = postUrl.Segments[4];
 
-        if (rkey.EndsWith('/')) rkey = rkey[..^1];
+        if (rkey.EndsWith('/'))
+        {
+            rkey = rkey[..^1];
+        }
 
-        var url = $"at://{user}app.bsky.feed.post/{rkey}";
+        string url = $"at://{user}app.bsky.feed.post/{rkey}";
         ATUri atUri = new(url);
 
-        var result = await _atProtocol.Feed.GetPostThreadAsync(atUri, 0);
+        Result<GetPostThreadOutput?> result = await _atProtocol.Feed.GetPostThreadAsync(atUri, 0);
 
         if (result.Value is ExpiredTokenError) //workarround for autorenewal not working
         {
@@ -56,7 +59,7 @@ public class BlueSkyScraper : ScraperBase
             return await ExtractContentAsync(postUrl);
         }
 
-        var post = ((ThreadViewPost)((GetPostThreadOutput)result.Value!).Thread!).Post!;
+        PostView post = ((ThreadViewPost)((GetPostThreadOutput)result.Value!).Thread!).Post!;
 
         ScrapedData scrapedData = new()
         {
@@ -65,28 +68,28 @@ public class BlueSkyScraper : ScraperBase
             Uri = postUrl
         };
 
-        var postText = post.PostRecord!.Text;
+        string? postText = post.PostRecord!.Text;
 
         if (post.PostRecord.Facets != null)
         {
-            var urlsInText = post.PostRecord!.Facets.Where(x => x.Type == "app.bsky.richtext.facet");
+            IEnumerable<Facet> urlsInText = post.PostRecord!.Facets.Where(x => x.Type == "app.bsky.richtext.facet");
 
-            foreach (var facet in urlsInText)
+            foreach (Facet? facet in urlsInText)
             {
-                var start = (int)facet.Index.ByteStart;
-                var end = (int)facet.Index.ByteEnd;
-                var length = end - start;
+                int start = (int)facet.Index.ByteStart;
+                int end = (int)facet.Index.ByteEnd;
+                int length = end - start;
                 if (facet.Features!.FirstOrDefault(x => x is Link) is Link link && postText != null)
                 {
-                    var replecaement = link.Uri;
+                    string replecaement = link.Uri;
                     // Extract the part before the replacement
-                    var firstPart = postText[..start];
+                    string firstPart = postText[..start];
 
                     // Extract the part after the replacement (if any)
-                    var secondPart = postText[(start + length)..];
-
+                    int totalSize = start + length;
+                    string secondPart = totalSize < postText.Length ? postText[totalSize..] : string.Empty;
                     // Concatenate to form the new string
-                    var newString = firstPart + replecaement + secondPart;
+                    string newString = $"{firstPart} {replecaement}{secondPart}";
 
                     postText = newString;
                 }
@@ -98,7 +101,7 @@ public class BlueSkyScraper : ScraperBase
         if (post.Embed is ViewImages images)
         {
             scrapedData.Type = ScrapedDataType.Media;
-            foreach (var image in images.Images!)
+            foreach (ViewImage image in images.Images!)
             {
                 Media media = new()
                 {
@@ -111,7 +114,7 @@ public class BlueSkyScraper : ScraperBase
         else if (post.Embed is ViewVideo video)
         {
             scrapedData.Type = ScrapedDataType.Media;
-            var mediaDetails = await YtDownloader.DownloadVideoFromUrlAsync(video.Playlist!, true);
+            MediaDetails? mediaDetails = await YtDownloader.DownloadVideoFromUrlAsync(video.Playlist!, true);
             if (mediaDetails != null)
             {
                 Media media = new()
@@ -127,7 +130,7 @@ public class BlueSkyScraper : ScraperBase
             scrapedData.Type = ScrapedDataType.Media;
             if (record.Media is ViewImages embedImages)
             {
-                foreach (var image in embedImages.Images!)
+                foreach (ViewImage image in embedImages.Images!)
                 {
                     Media media = new()
                     {
@@ -139,7 +142,7 @@ public class BlueSkyScraper : ScraperBase
             }
             else if (record.Media is ViewVideo embedVideo)
             {
-                var mediaDetails = await YtDownloader.DownloadVideoFromUrlAsync(embedVideo.Playlist!, true);
+                MediaDetails? mediaDetails = await YtDownloader.DownloadVideoFromUrlAsync(embedVideo.Playlist!, true);
                 if (mediaDetails != null)
                 {
                     Media media = new()

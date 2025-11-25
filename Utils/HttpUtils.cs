@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Net.Http.Headers;
 
 namespace TelegramMediaGrabberBot.Utils;
 
@@ -6,7 +7,7 @@ public static class HttpUtils
 {
     public static async Task<string> GetRealUrlFromMoved(string url)
     {
-        var redirectedUrl = url;
+        string redirectedUrl = url;
         try
         {
             //this allows you to set the settings so that we can get the redirect url
@@ -17,8 +18,8 @@ public static class HttpUtils
 
             using HttpClient client = new(handler);
             _ = client.DefaultRequestHeaders.UserAgent.TryParseAdd("curl");
-            using var response = await client.GetAsync(url);
-            using var content = response.Content;
+            using HttpResponseMessage response = await client.GetAsync(url);
+            using HttpContent content = response.Content;
             // ... Read the response to see if we have the redirected url
             if (response.StatusCode is HttpStatusCode.Found or
                 HttpStatusCode.Moved or
@@ -26,7 +27,7 @@ public static class HttpUtils
                 HttpStatusCode.PermanentRedirect
                )
             {
-                var headers = response.Headers;
+                HttpResponseHeaders headers = response.Headers;
                 if (headers != null && headers.Location != null)
                 {
                     redirectedUrl = headers.Location.AbsoluteUri;
@@ -46,7 +47,7 @@ public static class HttpUtils
         using HttpClient httpClient = new();
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("curl");
 
-        using var response = await httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
+        using HttpResponseMessage response = await httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
 
         _ = response.EnsureSuccessStatusCode();
 

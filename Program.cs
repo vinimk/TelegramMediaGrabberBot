@@ -4,37 +4,37 @@ using TelegramMediaGrabberBot.Config;
 using TelegramMediaGrabberBot.Services;
 using TelegramMediaGrabberBot.TelegramHandler;
 
-var host = Host.CreateDefaultBuilder(args)
+IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
     {
         ILogger logger = services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
 
-        var configuration = hostContext.Configuration;
+        IConfiguration configuration = hostContext.Configuration;
 
-        var telegramBotConfig = configuration
+        TelegramBotConfig? telegramBotConfig = configuration
             .GetSection("Telegram.Bot.Config")
             .Get<TelegramBotConfig>();
 
-        var whiteListedGroups = hostContext.Configuration.GetSection("WhitelistedGroupIds").Get<List<long?>>();
+        List<long?>? whiteListedGroups = hostContext.Configuration.GetSection("WhitelistedGroupIds").Get<List<long?>>();
         logger.LogInformation("whiteListedGroups {whiteListedGroups}", whiteListedGroups);
 
-        var nitterInstances = hostContext.Configuration.GetSection("NitterInstances").Get<List<string>>();
+        List<string>? nitterInstances = hostContext.Configuration.GetSection("NitterInstances").Get<List<string>>();
         logger.LogInformation("nitterInstances {nitterInstances}", nitterInstances);
 
-        var instagramProxies = hostContext.Configuration.GetSection("InstagramProxies").Get<List<string>>();
+        List<string>? instagramProxies = hostContext.Configuration.GetSection("InstagramProxies").Get<List<string>>();
         logger.LogInformation("instagramProxies {instagramProxies}", instagramProxies);
 
-        var supportedWebSites = hostContext.Configuration.GetSection("SupportedWebSites").Get<List<string>>();
+        List<string>? supportedWebSites = hostContext.Configuration.GetSection("SupportedWebSites").Get<List<string>>();
         logger.LogInformation("supportedWebSites {supportedWebSites}", supportedWebSites);
 
-        var hoursBetweenBackgroundTask = hostContext.Configuration.GetValue<int?>("HoursBetweenBackgroundTask");
+        int? hoursBetweenBackgroundTask = hostContext.Configuration.GetValue<int?>("HoursBetweenBackgroundTask");
         logger.LogInformation("HoursBetweenBackgroundTask {hoursBetweenBackgroundTask}", hoursBetweenBackgroundTask);
 
-        var blueSkyAuth = configuration
+        BlueSkyAuth? blueSkyAuth = configuration
             .GetSection("BlueSkyAuth")
             .Get<BlueSkyAuth>();
 
-        var instagramAuth = configuration
+        InstagramAuth? instagramAuth = configuration
             .GetSection("InstagramAuth")
             .Get<InstagramAuth>();
 

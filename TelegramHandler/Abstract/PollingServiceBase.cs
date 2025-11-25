@@ -40,13 +40,14 @@ public abstract class PollingServiceBase<TReceiverService> : BackgroundService
         // Make sure we receive updates until Cancellation Requested,
         // no matter what errors our ReceiveAsync get
         while (!stoppingToken.IsCancellationRequested)
+        {
             try
             {
                 // Create new IServiceScope on each iteration.
                 // This way we can leverage benefits of Scoped TReceiverService
                 // and typed HttpClient - we'll grab "fresh" instance each time
-                using var scope = _serviceProvider.CreateScope();
-                var receiver = scope.ServiceProvider.GetRequiredService<TReceiverService>();
+                using IServiceScope scope = _serviceProvider.CreateScope();
+                TReceiverService receiver = scope.ServiceProvider.GetRequiredService<TReceiverService>();
 
                 await receiver.ReceiveAsync(stoppingToken);
             }
@@ -60,5 +61,6 @@ public abstract class PollingServiceBase<TReceiverService> : BackgroundService
                 // Cooldown if something goes wrong
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
+        }
     }
 }

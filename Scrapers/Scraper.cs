@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Diagnostics;
 using TelegramMediaGrabberBot.Config;
 using TelegramMediaGrabberBot.DataStructures;
+using TelegramMediaGrabberBot.DataStructures.Medias;
 using TelegramMediaGrabberBot.Scrapers.Implementations;
 using TelegramMediaGrabberBot.Utils;
 
@@ -50,7 +51,7 @@ public class Scraper
         if (!forceDownload)
         {
             //removes www. from the host
-            var host = uri.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? uri.Host[4..] : uri.Host;
+            string host = uri.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? uri.Host[4..] : uri.Host;
 
             return host switch
             {
@@ -63,11 +64,14 @@ public class Scraper
             };
         }
 
-        var videoObj = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri, forceDownload);
+        MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(uri.AbsoluteUri, forceDownload);
         return videoObj != null
             ? new ScrapedData
             {
-                Author = videoObj.Author, Content = videoObj.Content, Type = ScrapedDataType.Media, Uri = uri,
+                Author = videoObj.Author,
+                Content = videoObj.Content,
+                Type = ScrapedDataType.Media,
+                Uri = uri,
                 Medias = [videoObj]
             }
             : null;

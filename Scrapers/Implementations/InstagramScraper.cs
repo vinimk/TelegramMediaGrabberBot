@@ -1,6 +1,6 @@
-﻿using System.Web;
-using CommunityToolkit.Diagnostics;
+﻿using CommunityToolkit.Diagnostics;
 using HtmlAgilityPack;
+using System.Web;
 using TelegramMediaGrabberBot.DataStructures;
 using TelegramMediaGrabberBot.DataStructures.Medias;
 using TelegramMediaGrabberBot.Utils;
@@ -27,18 +27,23 @@ public class InstagramScraper : ScraperBase
     {
         ScrapedData? scrapedData = null;
 
-        for (var i = 0; i < 3; i++) //3 times for each
-            foreach (var hostUrl in _instagramProxies)
+        for (int i = 0; i < 3; i++) //3 times for each
+        {
+            foreach (string hostUrl in _instagramProxies)
             {
                 scrapedData = await ExtractFromMetaInstagram(hostUrl, instagramUrl);
-                if (scrapedData != null) return scrapedData;
+                if (scrapedData != null)
+                {
+                    return scrapedData;
+                }
 
                 await Task.Delay(2000);
             }
+        }
 
         if (scrapedData == null || !scrapedData.IsValid())
         {
-            var videoObj = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri, username: _userName,
+            MediaDetails? videoObj = await YtDownloader.DownloadVideoFromUrlAsync(instagramUrl.AbsoluteUri, username: _userName,
                 password: _password);
             return videoObj != null
                 ? new ScrapedData { Type = ScrapedDataType.Media, Uri = instagramUrl, Medias = [videoObj] }
@@ -58,16 +63,16 @@ public class InstagramScraper : ScraperBase
             Port = -1 //defualt port for schema
         };
 
-        var newUrl = newUriBuilder.Uri.AbsoluteUri;
+        string newUrl = newUriBuilder.Uri.AbsoluteUri;
 
         try
         {
-            using var client = _httpClientFactory.CreateClient("default");
+            using HttpClient client = _httpClientFactory.CreateClient("default");
             client.DefaultRequestHeaders.UserAgent.Clear();
             client.DefaultRequestHeaders.UserAgent.ParseAdd("discordbot");
             client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
 
-            var response = await client.GetAsync(newUrl);
+            HttpResponseMessage response = await client.GetAsync(newUrl);
 
             _logger.LogInformation("url {url}", newUrl);
             _logger.LogInformation("response {response}", response.ToString());
@@ -76,7 +81,7 @@ public class InstagramScraper : ScraperBase
             {
                 HtmlDocument doc = new();
                 doc.Load(await response.Content.ReadAsStreamAsync());
-                var metaNodes = doc.DocumentNode.SelectSingleNode("//head")!.Descendants("meta");
+                IEnumerable<HtmlNode> metaNodes = doc.DocumentNode.SelectSingleNode("//head")!.Descendants("meta");
 
                 ScrapedData scraped = new()
                 {
@@ -84,42 +89,53 @@ public class InstagramScraper : ScraperBase
                 };
 
 
-                var contentNode = metaNodes
+                HtmlNode? contentNode = metaNodes
                     .Where(x => x.GetAttributeValue("property", string.Empty) == "og:description")
                     .FirstOrDefault();
 
                 if (contentNode != null)
+                {
                     scraped.Content = HttpUtility.HtmlDecode(contentNode.GetAttributeValue("content", ""));
+                }
 
-                var authorNode = metaNodes.Where(x => x.GetAttributeValue("name", string.Empty) == "twitter:title")
+                HtmlNode? authorNode = metaNodes.Where(x => x.GetAttributeValue("name", string.Empty) == "twitter:title")
                     .FirstOrDefault();
 
                 if (authorNode != null)
+                {
                     scraped.Author = HttpUtility.HtmlDecode(authorNode.GetAttributeValue("content", ""));
+                }
 
-
-                var videoNode = metaNodes
+                HtmlNode? videoNode = metaNodes
                     .Where(x => x.GetAttributeValue("property", string.Empty) is "og:video" or "og:video:url")
                     .FirstOrDefault();
 
                 if (videoNode != null)
                 {
-                    var videoUrl = videoNode.GetAttributeValue("content", "");
+                    string videoUrl = videoNode.GetAttributeValue("content", "");
                     scraped.Type = ScrapedDataType.Media;
-                    if (!videoUrl.StartsWith("https://")) videoUrl = $"https://{hostUrl}{videoUrl}";
+                    if (!videoUrl.StartsWith("https://"))
+                    {
+                        videoUrl = $"https://{hostUrl}{videoUrl}";
+                    }
+
                     scraped.Medias!.Add(new Media { Type = MediaType.Video, Uri = new Uri(videoUrl) });
                 }
                 else
                 {
-                    var imageNode = metaNodes
+                    HtmlNode? imageNode = metaNodes
                         .Where(x => x.GetAttributeValue("property", string.Empty) is "og:image" or "og:image:url")
                         .FirstOrDefault();
 
                     if (imageNode != null)
                     {
-                        var imageUrl = imageNode.GetAttributeValue("content", "");
+                        string imageUrl = imageNode.GetAttributeValue("content", "");
                         scraped.Type = ScrapedDataType.Media;
-                        if (!imageUrl.StartsWith("https://")) imageUrl = $"https://{hostUrl}{imageUrl}";
+                        if (!imageUrl.StartsWith("https://"))
+                        {
+                            imageUrl = $"https://{hostUrl}{imageUrl}";
+                        }
+
                         scraped.Medias!.Add(new Media { Type = MediaType.Image, Uri = new Uri(imageUrl) });
                     }
                 }

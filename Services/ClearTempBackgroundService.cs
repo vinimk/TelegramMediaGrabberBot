@@ -20,12 +20,14 @@ public class ClearTempBackgroundService : BackgroundService
     {
         while (await _timer.WaitForNextTickAsync(stoppingToken)
                && !stoppingToken.IsCancellationRequested)
+        {
             try
             {
                 DirectoryInfo di = new("tmp");
-                var files = di.EnumerateFiles();
+                IEnumerable<FileInfo> files = di.EnumerateFiles();
                 _logger.LogInformation("Found {files} to delete", files.Count());
-                foreach (var file in files)
+                foreach (FileInfo file in files)
+                {
                     try
                     {
                         if (file.CreationTimeUtc <
@@ -39,10 +41,12 @@ public class ClearTempBackgroundService : BackgroundService
                     {
                         _logger.LogError(ex, "Failed to delete {file}", file.FullName);
                     }
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed");
             }
+        }
     }
 }

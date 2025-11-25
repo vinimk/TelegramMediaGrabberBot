@@ -30,16 +30,32 @@ public class ScrapedData : IDisposable
     public string GetTelegramFormatedText(bool isSpoiler = false, bool isCaption = false)
     {
         StringBuilder sb = new();
-        if (isSpoiler) _ = sb.Append("<span class='tg-spoiler'>");
+        if (isSpoiler)
+        {
+            _ = sb.Append("<span class='tg-spoiler'>");
+        }
 
-        if (!string.IsNullOrWhiteSpace(Author)) _ = sb.Append($"<b>{HttpUtility.HtmlEncode(Author.Trim())}</b>:\n");
-        if (!string.IsNullOrWhiteSpace(Content)) _ = sb.Append($"{HttpUtility.HtmlEncode(Content.Trim())}\n");
+        if (!string.IsNullOrWhiteSpace(Author))
+        {
+            _ = sb.Append($"<b>{HttpUtility.HtmlEncode(Author.Trim())}</b>:\n");
+        }
+
+        if (!string.IsNullOrWhiteSpace(Content))
+        {
+            _ = sb.Append($"{HttpUtility.HtmlEncode(Content.Trim())}\n");
+        }
+
         if (!string.IsNullOrWhiteSpace(Uri?.AbsoluteUri))
+        {
             _ = sb.Append($"<a href='{Uri?.AbsoluteUri.Trim()}'><i>Link</i></a>");
+        }
 
-        if (isSpoiler) _ = sb.Append("</span>");
+        if (isSpoiler)
+        {
+            _ = sb.Append("</span>");
+        }
 
-        var maxLength = isCaption ? 1024 : 4096;
+        int maxLength = isCaption ? 1024 : 4096;
 
         return sb.Length > maxLength
             ? sb.ToString()[..(maxLength - 1)]
@@ -51,12 +67,18 @@ public class ScrapedData : IDisposable
         switch (Type)
         {
             case ScrapedDataType.Media:
-                if (Medias!.Count != 0) return true;
+                if (Medias!.Count != 0)
+                {
+                    return true;
+                }
 
                 break;
 
             case ScrapedDataType.Text:
-                if (!string.IsNullOrWhiteSpace(Content)) return true;
+                if (!string.IsNullOrWhiteSpace(Content))
+                {
+                    return true;
+                }
 
                 break;
         }

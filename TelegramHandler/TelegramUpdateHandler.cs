@@ -1,5 +1,5 @@
-﻿using System.Text.RegularExpressions;
-using CommunityToolkit.Diagnostics;
+﻿using CommunityToolkit.Diagnostics;
+using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -23,23 +23,30 @@ public partial class TelegramUpdateHandler : IUpdateHandler
     {
         try
         {
-            if (message.Text is not { } messageText) return;
+            if (message.Text is not { } messageText)
+            {
+                return;
+            }
 
             if (messageText.Contains('@'))
             {
-                var action = messageText.Split('@')[0] switch
+                Task action = messageText.Split('@')[0] switch
                 {
                     "/acende" => SendRojao(botClient, message, cancellationToken),
                     _ => Task.CompletedTask
                 };
             }
 
-            foreach (var uri in from Match match in LinkParser.Matches(messageText)
-                     let uri = new UriBuilder(match.Value).Uri
-                     select uri)
+            foreach (Uri? uri in from Match match in LinkParser.Matches(messageText)
+                                 let uri = new UriBuilder(match.Value).Uri
+                                 select uri)
             {
                 if (!_supportedWebSites.Any(s =>
-                        uri.AbsoluteUri.Contains(s, StringComparison.CurrentCultureIgnoreCase))) return;
+                        uri.AbsoluteUri.Contains(s, StringComparison.CurrentCultureIgnoreCase)))
+                {
+                    return;
+                }
+
                 await TelegramMessageProcessor.ProcessMesage(_scraper, uri, message, botClient, _logger,
                     cancellationToken);
             }
@@ -98,7 +105,7 @@ public partial class TelegramUpdateHandler : IUpdateHandler
     public async Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception,
         CancellationToken cancellationToken)
     {
-        var ErrorMessage = exception switch
+        string ErrorMessage = exception switch
         {
             ApiRequestException apiRequestException =>
                 $"Telegram API Error:\n[{apiRequestException.ErrorCode}]\n{apiRequestException.Message}",
@@ -108,7 +115,10 @@ public partial class TelegramUpdateHandler : IUpdateHandler
         _logger.LogInformation("HandleError: {ErrorMessage}", ErrorMessage);
 
         // Cooldown in case of network connection error
-        if (exception is RequestException) await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+        if (exception is RequestException)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+        }
     }
 
     [GeneratedRegex(

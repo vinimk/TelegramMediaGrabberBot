@@ -1,6 +1,6 @@
-﻿using System.Text;
-using CliWrap;
+﻿using CliWrap;
 using CliWrap.Buffered;
+using System.Text;
 using TagLib;
 using TagLib.Matroska;
 using TelegramMediaGrabberBot.DataStructures.Medias;
@@ -42,7 +42,9 @@ public static class YtDownloader
             string[] argumentsAuth = [];
 
             if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
+            {
                 argumentsAuth = ["--username", username, "--password", password];
+            }
 
             if (!forceDownload) //only use the getURL method if ForceDownload is disabled
             {
@@ -52,7 +54,7 @@ public static class YtDownloader
                     "--get-url", url, "-f", _ytdlpFormat
                 ];
 
-                var urlResult = await Cli.Wrap("yt-dlp")
+                BufferedCommandResult urlResult = await Cli.Wrap("yt-dlp")
                     .WithArguments(argumentsGetUrl)
                     .WithValidation(CommandResultValidation.None)
                     .ExecuteBufferedAsync();
@@ -61,8 +63,10 @@ public static class YtDownloader
                 if (urlResult.StandardOutput.Length > 0 &&
                     urlResult.StandardOutput.Split("\n").Length <=
                     2) //workarround for some providers (youtube shorts for ex) that has different tracks for video/sound, we need to force
+                {
                     return new MediaDetails
-                        { Uri = new Uri(urlResult.StandardOutput.Replace("\n", "")), Type = MediaType.Video };
+                    { Uri = new Uri(urlResult.StandardOutput.Replace("\n", "")), Type = MediaType.Video };
+                }
             }
 
 
@@ -74,18 +78,22 @@ public static class YtDownloader
                 "User-Agent:facebookexternalhit/1.1", "--embed-metadata", "--exec", "echo", url
             ];
 
-            var dlFileSize = await Cli.Wrap("yt-dlp")
+            BufferedCommandResult dlFileSize = await Cli.Wrap("yt-dlp")
                 .WithArguments(argumentsFileSize)
                 .WithValidation(CommandResultValidation.None)
                 .ExecuteBufferedAsync();
 
             if (dlFileSize.StandardOutput.Length >
                 0) //workarround for some providers (ie tiktok that return weird separated filenames)
-                if (int.TryParse(dlFileSize.StandardOutput.Trim(), out var fileSize) &&
+            {
+                if (int.TryParse(dlFileSize.StandardOutput.Trim(), out int fileSize) &&
                     fileSize > _maxFileSize)
+                {
                     throw new InvalidOperationException("File too big");
+                }
+            }
 
-            var fileName = $"tmp/{Guid.NewGuid()}.mp4";
+            string fileName = $"tmp/{Guid.NewGuid()}.mp4";
 
             IEnumerable<string> arguments =
             [
@@ -97,7 +105,7 @@ public static class YtDownloader
                 "--embed-metadata", "--exec", "echo", url
             ];
 
-            var dlResult = await Cli.Wrap("yt-dlp")
+            BufferedCommandResult dlResult = await Cli.Wrap("yt-dlp")
                 .WithArguments(arguments).WithValidation(CommandResultValidation.None)
                 .ExecuteBufferedAsync();
 
@@ -106,7 +114,7 @@ public static class YtDownloader
             {
                 log.LogInformation("Info: {buffer}", dlResult.StandardOutput);
 
-                var output = dlResult.StandardOutput.Split(Environment.NewLine);
+                string[] output = dlResult.StandardOutput.Split(Environment.NewLine);
 
                 fileName = output[^2];
             }
@@ -118,13 +126,16 @@ public static class YtDownloader
                 log.LogInformation("downloaded video for url {url} size: {size}MB", url,
                     stream.Length / 1024.0f / 1024.0f);
 
-                if (stream.Length > _maxFileSize) throw new InvalidOperationException("File too big");
+                if (stream.Length > _maxFileSize)
+                {
+                    throw new InvalidOperationException("File too big");
+                }
 
                 try
                 {
                     FileInfo fi = new(fileName);
 
-                    var tfile = TagLib.File.Create(fileName, $"video/{fi.Extension.Replace(".", string.Empty)}",
+                    TagLib.File tfile = TagLib.File.Create(fileName, $"video/{fi.Extension.Replace(".", string.Empty)}",
                         ReadStyle.Average);
                     string? description, author;
                     if (tfile.TagTypes == TagTypes.Matroska)
@@ -170,7 +181,10 @@ public static class YtDownloader
 
                         await UpdateYtDlpAsync();
 
-                        if (!updatedYtDl) return await DownloadVideoFromUrlAsync(url, forceDownload, true);
+                        if (!updatedYtDl)
+                        {
+                            return await DownloadVideoFromUrlAsync(url, forceDownload, true);
+                        }
                     }
                 }
             }
