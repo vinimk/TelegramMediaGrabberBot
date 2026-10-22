@@ -47,10 +47,6 @@ public static class HttpUtils
         using HttpClient httpClient = new();
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("curl");
 
-        using HttpResponseMessage response = await httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
-
-        _ = response.EnsureSuccessStatusCode();
-
-        return await response.Content.ReadAsStreamAsync();
+        return await httpClient.GetStreamAsync(uri);
     }
 }

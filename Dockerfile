@@ -7,7 +7,9 @@ RUN set -x && \
     apt install -y \
         wget \
         python3 \
-        python3-pip
+        python3-pip \
+        p7zip-full \
+        curl
 
 RUN set -x && \
     wget 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp' -P /tmp/yt-dlp/ && \
@@ -32,6 +34,10 @@ RUN set -x && \
         mv $(find /tmp/ffmpeg/* -name ffprobe) /usr/local/bin/ && \
         rm -rf /tmp/* ; \
     fi
+
+RUN set -x && \
+    wget https://deno.land/install.sh  -P /tmp/deno/ && \
+    sh /tmp/deno/install.sh
 
 WORKDIR /app
 

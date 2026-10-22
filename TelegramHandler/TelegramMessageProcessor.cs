@@ -92,20 +92,31 @@ public static class TelegramMessageProcessor
 
                                     albumMedia = [];
 
-                                    foreach (Media? media in
-                                             data.Medias.Where(x =>
-                                                 x.Type == MediaType.Video)) //only try to force for videos for now
+                                    foreach (Media? media in data.Medias) //only try to force for videos for now
                                     {
                                         Stream? stream = await HttpUtils.GetStreamFromUrl(media.Uri!);
                                         InputFileStream inputFile = InputFile.FromStream(stream!, Guid.NewGuid().ToString());
-                                        InputMediaVideo inputMedia = new(inputFile)
-                                        {
-                                            HasSpoiler = isSpoiler,
-                                            Caption = data.GetTelegramFormatedText(isSpoiler, true),
-                                            ParseMode = ParseMode.Html
-                                        };
 
-                                        albumMedia.Add(inputMedia);
+                                        if (media.Type == MediaType.Video)
+                                        {
+                                            InputMediaVideo inputMedia = new(inputFile)
+                                            {
+                                                HasSpoiler = isSpoiler,
+                                                Caption = data.GetTelegramFormatedText(isSpoiler, true),
+                                                ParseMode = ParseMode.Html
+                                            };
+                                            albumMedia.Add(inputMedia);
+                                        }
+                                        else if (media.Type == MediaType.Image)
+                                        {
+                                            InputMediaPhoto inputMedia = new(inputFile)
+                                            {
+                                                HasSpoiler = isSpoiler,
+                                                Caption = data.GetTelegramFormatedText(isSpoiler, true),
+                                                ParseMode = ParseMode.Html
+                                            };
+                                            albumMedia.Add(inputMedia);
+                                        }
                                     }
 
                                     _ = await botClient.SendMediaGroup(message.Chat, messageThreadId: messageThreadId,
