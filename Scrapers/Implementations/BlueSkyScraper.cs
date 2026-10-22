@@ -1,10 +1,9 @@
-﻿using CommunityToolkit.Diagnostics;
-using FishyFlip;
-using FishyFlip.Lexicon;
-using FishyFlip.Lexicon.App.Bsky.Embed;
-using FishyFlip.Lexicon.App.Bsky.Feed;
-using FishyFlip.Lexicon.App.Bsky.Richtext;
-using FishyFlip.Models;
+using System.Text;
+using System.Text.Json;
+using CarpaNet;
+using CarpaNet.Cbor;
+using CarpaNet.Json;
+using CommunityToolkit.Diagnostics;
 using TelegramMediaGrabberBot.DataStructures;
 using TelegramMediaGrabberBot.DataStructures.Medias;
 using TelegramMediaGrabberBot.Utils;
@@ -13,7 +12,7 @@ namespace TelegramMediaGrabberBot.Scrapers.Implementations;
 
 public class BlueSkyScraper : ScraperBase
 {
-    private static ATProtocol? _atProtocol;
+    private static ATProtoClient? _atProtocol;
     private static string? _userName;
     private static string? _passWord;
 
@@ -28,16 +27,16 @@ public class BlueSkyScraper : ScraperBase
 
     public override async Task<ScrapedData?> ExtractContentAsync(Uri postUrl, bool forceDownload = false)
     {
-        if (_atProtocol == null)
-        {
-            ATProtocolBuilder atProtocolBuilder = new ATProtocolBuilder()
-                .EnableAutoRenewSession(true)
-                // Set the instance URL for the PDS you wish to connect to.
-                // Defaults to bsky.social.
-                .WithLogger(_logger);
-            _atProtocol = atProtocolBuilder.Build();
-            _ = await _atProtocol.AuthenticateWithPasswordResultAsync(_userName!, _passWord!);
-        }
+        _atProtocol ??= await ATProtoClient.CreateWithSessionAsync(
+            identifier: _userName!,
+            password: _passWord!,
+            options: new ATProtoClientOptions
+            {
+                JsonOptions = ATProtoJsonContext.DefaultOptions,
+                CborContext = ATProtoCborContext.Default,
+                LoggerFactory = ApplicationLogging.LoggerFactory,
+                AutoRetryOnAuthFailure = true
+            });
 
         string user = postUrl.Segments[2];
         string rkey = postUrl.Segments[4];
@@ -50,71 +49,86 @@ public class BlueSkyScraper : ScraperBase
         string url = $"at://{user}app.bsky.feed.post/{rkey}";
         ATUri atUri = new(url);
 
-        Result<GetPostThreadOutput?> result = await _atProtocol.Feed.GetPostThreadAsync(atUri, 0);
+        AppBsky.Feed.GetPostThreadOutput result = await _atProtocol.AppBskyFeedGetPostThreadAsync(
+            new AppBsky.Feed.GetPostThreadParameters
+            {
+                Uri = atUri,
+                Depth = 0
+            });
 
-        if (result.Value is ExpiredTokenError) //workarround for autorenewal not working
+        if (result.Thread is not AppBsky.Feed.DefsThreadViewPost thread)
         {
-            _logger.LogInformation("Token expired, setting protocol to null {token}", result.Value.ToString());
-            _atProtocol = null;
-            return await ExtractContentAsync(postUrl);
+            return null;
         }
 
-        PostView post = ((ThreadViewPost)((GetPostThreadOutput)result.Value!).Thread!).Post!;
-
+        AppBsky.Feed.DefsPostView post = thread.Post;
         ScrapedData scrapedData = new()
         {
             Type = ScrapedDataType.Text,
-            Author = post.Author!.DisplayName,
+            Author = post.Author.DisplayName,
             Uri = postUrl
         };
 
-        string? postText = post.PostRecord!.Text;
+        JsonElement postRecord = post.Record;
+        string? postText = postRecord.ValueKind == JsonValueKind.Object &&
+            postRecord.TryGetProperty("text", out JsonElement textElement)
+                ? textElement.GetString()
+                : null;
 
-        if (post.PostRecord.Facets != null)
+        if (postText is not null && postRecord.ValueKind == JsonValueKind.Object &&
+            postRecord.TryGetProperty("facets", out JsonElement facetsElement) &&
+            facetsElement.ValueKind == JsonValueKind.Array)
         {
-            IEnumerable<Facet> urlsInText = post.PostRecord!.Facets.Where(x => x.Type == "app.bsky.richtext.facet");
+            byte[] textBytes = Encoding.UTF8.GetBytes(postText);
 
-            foreach (Facet? facet in urlsInText)
+            AppBsky.Richtext.Facet[] facets = facetsElement.EnumerateArray()
+                .Select(AppBsky.Richtext.Facet.FromJson)
+                .OrderByDescending(x => x.Index.ByteStart)
+                .ToArray();
+
+            foreach (AppBsky.Richtext.Facet facet in facets)
             {
-                int start = (int)facet.Index.ByteStart;
-                int end = (int)facet.Index.ByteEnd;
-                int length = end - start;
-                if (facet.Features!.FirstOrDefault(x => x is Link) is Link link && postText != null)
+                if (facet.Features.OfType<AppBsky.Richtext.FacetLink>().FirstOrDefault() is not { } link)
                 {
-                    string replecaement = link.Uri;
-                    // Extract the part before the replacement
-                    string firstPart = postText[..start];
-
-                    // Extract the part after the replacement (if any)
-                    int totalSize = start + length;
-                    string secondPart = totalSize < postText.Length ? postText[totalSize..] : string.Empty;
-                    // Concatenate to form the new string
-                    string newString = $"{firstPart} {replecaement}{secondPart}";
-
-                    postText = newString;
+                    continue;
                 }
+
+                long byteStart = facet.Index.ByteStart;
+                long byteEnd = facet.Index.ByteEnd;
+                if (byteStart < 0 || byteEnd < byteStart || byteEnd > textBytes.Length)
+                {
+                    continue;
+                }
+
+                int start = (int)byteStart;
+                int end = (int)byteEnd;
+                string firstPart = Encoding.UTF8.GetString(textBytes, 0, start);
+                string secondPart = Encoding.UTF8.GetString(textBytes, end, textBytes.Length - end);
+                textBytes = Encoding.UTF8.GetBytes($"{firstPart} {link.Uri}{secondPart}");
             }
+
+            postText = Encoding.UTF8.GetString(textBytes);
         }
 
         scrapedData.Content = postText;
 
-        if (post.Embed is ViewImages images)
+        if (post.Embed is AppBsky.Embed.ImagesView images)
         {
             scrapedData.Type = ScrapedDataType.Media;
-            foreach (ViewImage image in images.Images!)
+            foreach (AppBsky.Embed.ImagesViewImage image in images.Images)
             {
                 Media media = new()
                 {
                     Type = MediaType.Image,
-                    Uri = new Uri(image.Fullsize!)
+                    Uri = new Uri(image.Fullsize)
                 };
                 scrapedData.Medias!.Add(media);
             }
         }
-        else if (post.Embed is ViewVideo video)
+        else if (post.Embed is AppBsky.Embed.VideoView video)
         {
             scrapedData.Type = ScrapedDataType.Media;
-            MediaDetails? mediaDetails = await YtDownloader.DownloadVideoFromUrlAsync(video.Playlist!, true);
+            MediaDetails? mediaDetails = await YtDownloader.DownloadVideoFromUrlAsync(video.Playlist, true);
             if (mediaDetails != null)
             {
                 Media media = new()
@@ -125,24 +139,24 @@ public class BlueSkyScraper : ScraperBase
                 scrapedData.Medias!.Add(media);
             }
         }
-        else if (post.Embed is ViewRecordWithMedia record)
+        else if (post.Embed is AppBsky.Embed.RecordWithMediaView record)
         {
             scrapedData.Type = ScrapedDataType.Media;
-            if (record.Media is ViewImages embedImages)
+            if (record.Media is AppBsky.Embed.ImagesView embedImages)
             {
-                foreach (ViewImage image in embedImages.Images!)
+                foreach (AppBsky.Embed.ImagesViewImage image in embedImages.Images)
                 {
                     Media media = new()
                     {
                         Type = MediaType.Image,
-                        Uri = new Uri(image.Fullsize!)
+                        Uri = new Uri(image.Fullsize)
                     };
                     scrapedData.Medias!.Add(media);
                 }
             }
-            else if (record.Media is ViewVideo embedVideo)
+            else if (record.Media is AppBsky.Embed.VideoView embedVideo)
             {
-                MediaDetails? mediaDetails = await YtDownloader.DownloadVideoFromUrlAsync(embedVideo.Playlist!, true);
+                MediaDetails? mediaDetails = await YtDownloader.DownloadVideoFromUrlAsync(embedVideo.Playlist, true);
                 if (mediaDetails != null)
                 {
                     Media media = new()
